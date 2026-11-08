@@ -1,0 +1,103 @@
+// ---------- today's quest map ----------
+const QUESTS=[
+ {key:'sparks',em:'⚡',name:'Brain Sparks',sub:'quick warm-up',run:sparksQuest},
+ {key:'math',em:'🔢',name:'Math Quest',sub:'your next level',run:mathQuest},
+ {key:'words',em:'🔤',name:'Word Work',sub:'read words out loud',run:wordsQuest},
+ {key:'story',em:'📖',name:'Story Time',sub:'a new business story',run:storyQuest},
+ {key:'speech',em:'🎤',name:'Echo Stage',sub:'say it clearly',run:speechQuest},
+ {key:'typing',em:'⌨️',name:'Typing Island',sub:'spell it, type it',run:typingQuest},
+];
+function home(){
+  const t=today();const nextQ=QUESTS.find(q=>!t.done.includes(q.key));
+  const tiles=QUESTS.map(q=>{const done=t.done.includes(q.key);const now=nextQ&&nextQ.key===q.key;return '<button class="quest '+(done?'done':now?'now':'locked')+'" data-k="'+q.key+'" '+(done||!now?'disabled':'')+'><span class="em">'+q.em+'</span><b>'+q.name+'</b><span class="sub">'+(done?'✅ done today':now?'▶ tap to start':'🔒 after '+QUESTS[QUESTS.indexOf(q)-1].name)+'</span></button>'}).join('');
+  const greet=t.done.length===0?'Hi '+D.name+'! Six quests today. Start at the top.':t.done.length<QUESTS.length?'Nice work so far! '+(QUESTS.length-t.done.length)+' to go.':'All six done! Today\'s star is yours. ⭐';
+  render('<div class="row" style="justify-content:space-between"><h2>'+D.avatar+' Today\'s Quest</h2><span class="streak">🔥 '+D.streak+' day streak</span></div><p>'+greet+'</p><div class="quests" id="qs">'+tiles+'</div>'+(t.star?'<div class="row" style="justify-content:center"><button class="btn ghost" id="bonus">🎁 Bonus round (extra coins)</button><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>':'<div class="row" style="justify-content:center"><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>'));
+  document.querySelectorAll('#qs .quest').forEach(b=>b.onclick=()=>{const q=QUESTS.find(x=>x.key===b.dataset.k);if(q&&nextQ&&q.key===nextQ.key)q.run(home)});
+  if(t.done.length===0&&!D.greeted){D.greeted=todayKey();save();speak(greet)}
+  if($('bonus'))$('bonus').onclick=()=>mathQuest(home);
+  $('trophies').onclick=()=>{render('<h2 class="center">🏅 Badges</h2>'+badgesHTML()+'<p class="center muted">'+D.dayStars+' day stars · '+D.coins+' coins · best streak '+(D.bestStreak||D.streak)+'</p><div class="row" style="justify-content:center"><button class="btn" id="back">Back</button></div>');$('back').onclick=home};
+}
+function completeQuest(key,summary,done){
+  const t=today();if(!t.done.includes(key))t.done.push(key);t.summaries=t.summaries||{};t.summaries[key]=summary;save();hud();
+  const fresh=checkBadges();const q=QUESTS.find(x=>x.key===key);const allDone=QUESTS.every(x=>t.done.includes(x.key));
+  confetti();
+  render('<div class="stars pop">'+q.em+'⭐</div><h2 class="center">'+q.name+' complete!</h2><p class="center">'+esc(summary)+'</p>'+(fresh.length?'<div class="box gold"><b>New badge'+(fresh.length>1?'s':'')+'!</b> '+fresh.map(b=>b.em+' '+b.name).join(' · ')+'</div>':'')+'<div class="row" style="justify-content:center">'+(allDone?'<button class="btn good" id="next" style="font-size:1.5rem">🏆 Finish the day</button>':'<button class="btn pink" id="brk">🎶 Take a break</button><button class="btn good" id="next">Next quest ➜</button>')+'</div>');
+  speak(q.name+' complete! '+(fresh.length?'New badge: '+fresh.map(b=>b.name).join(' and ')+'!':''));
+  if($('brk'))$('brk').onclick=()=>breakMenu(home);
+  $('next').onclick=()=>allDone?dayComplete():home();
+}
+function dayComplete(){
+  const t=today();let newly=[];
+  if(!t.star){t.star=true;const y=new Date();y.setDate(y.getDate()-1);const yk=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');D.streak=(D.lastDay===yk)?D.streak+1:1;D.bestStreak=Math.max(D.bestStreak||0,D.streak);D.lastDay=todayKey();D.dayStars++;D.stars+=3;coins(25);
+    D.prizes.forEach(p=>{if(!p.earned&&D.dayStars-p.start>=p.need){p.earned=todayKey();newly.push(p)}});save();hud();saveResults()}
+  const fresh=checkBadges();confetti();
+  const acc=t.items?Math.round(100*t.correct/t.items):0;
+  render('<div class="stars pop">🏆⭐🏆</div><h1 class="center">Day complete, '+D.name+'!</h1><p class="center">All six quests. '+t.items+' questions, '+acc+'% right. 🔥 Streak: '+D.streak+' day'+(D.streak===1?'':'s')+'. Day stars: '+D.dayStars+'.</p>'+(newly.length?'<div class="box gold center"><h2>🎉 PRIZE EARNED!</h2><p class="prompt small">'+newly.map(p=>esc(p.name)).join(' and ')+'</p><p class="muted">Show this screen to Dad.</p></div>':'')+(fresh.length?'<div class="box"><b>New badge'+(fresh.length>1?'s':'')+'!</b> '+fresh.map(b=>b.em+' '+b.name).join(' · ')+'</div>':'')+'<div class="box"><span class="tag" style="color:var(--accent2);font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:.9rem">Prizes</span>'+D.prizes.filter(p=>!p.earned).map(p=>'<p>🔒 <b>'+esc(p.name)+'</b> <span class="muted">'+Math.min(p.need,D.dayStars-p.start)+' of '+p.need+' days</span></p><div class="bar"><div style="width:'+Math.round(100*Math.min(p.need,D.dayStars-p.start)/p.need)+'%;background:linear-gradient(90deg,var(--coin),var(--accent))"></div></div>').join('')+D.prizes.filter(p=>p.earned).map(p=>'<p>✅ <b>'+esc(p.name)+'</b> <span class="muted">earned '+p.earned+'</span></p>').join('')+'</div><div class="row" style="justify-content:center"><button class="btn pink" id="brk">🎶 Dance it out</button><button class="btn" id="home">Back to the map</button></div>');
+  speak('Day complete, '+D.name+'! '+(newly.length?'Prize earned: '+newly.map(p=>p.name.replace(/[^\w\s]/g,'')).join(' and ')+'!':'Streak: '+D.streak+' days. See you tomorrow!'));
+  $('brk').onclick=()=>breakMenu(home);$('home').onclick=home;
+}
+// save a copy of results where a parent can get them (artifact db when available; always on this device)
+async function saveResults(){
+  const payload={player:D.name,date:todayKey(),day:today(),skills:D.skills,reading:{level:D.reading.level,tricky:D.reading.tricky,last:D.reading.history.slice(-3)},speech:D.speech,typing:D.typing,dayStars:D.dayStars,streak:D.streak,report:reportText()};
+  try{localStorage.setItem('cq-last-report',JSON.stringify(payload))}catch(e){}
+  try{const db=await (window.claude&&window.claude.use?window.claude.use('db'):Promise.resolve(null));if(db)await db.collection('days').add(payload)}catch(e){}
+}
+
+// ---------- report & parent dashboard ----------
+function lvName(key){const s=sk(key);const L=SKILLS[key].levels;return 'L'+(s.level+1)+'/'+L.length+' · '+L[Math.min(s.level,L.length-1)].n}
+function reportText(){
+  const t=today();const acc=t.items?Math.round(100*t.correct/t.items):0;
+  const lines=['Camila\'s Quest report · '+new Date().toLocaleString(),'Day stars '+D.dayStars+' · streak '+D.streak+' · coins '+D.coins,'Today: '+t.done.length+' of 6 quests, '+t.items+' answers, '+acc+'% right, about '+Math.round(t.secs/60)+' min of answering'];
+  QUESTS.forEach(q=>{if(t.summaries&&t.summaries[q.key])lines.push('  '+q.em+' '+q.name+': '+t.summaries[q.key])});
+  lines.push('','Math levels:');SKILL_ORDER.forEach(k=>lines.push('  '+SKILLS[k].name+': '+lvName(k)+(levelAcc(k,sk(k).level)!==null?' · '+levelAcc(k,sk(k).level)+'% at this level':'')+' · mastered '+sk(k).mastered.length));
+  lines.push('Word Work level: '+WORDLV[Math.min(sk('words').level,WORDLV.length-1)].n,'Stories level: '+(D.reading.level+2)+'th-grade-ish · read '+D.reading.history.filter(h=>h.title).length,'Echo Stage level: '+SPEECHLV[Math.min(sk('speech').level,SPEECHLV.length-1)].n,'Typing level: '+TYPELV[Math.min(sk('typing').level,TYPELV.length-1)].n);
+  const tr=Object.keys(D.reading.tricky).filter(w=>D.reading.tricky[w]>0);if(tr.length)lines.push('Words to practice: '+tr.join(', '));
+  const misses=t.log.filter(l=>l.m==='math'&&!l.ok).slice(0,12).map(l=>l.q+' (said '+l.given+', answer '+l.a+')');if(misses.length)lines.push('','Math misses today:',...misses.map(m=>'  '+m));
+  return lines.join('\n');
+}
+function parentGate(){
+  render('<h2>Grown-ups</h2><p class="muted">Enter the code (hint: the year Camila was born).</p><div class="row"><input type="password" id="code" inputmode="numeric" placeholder="code"><button class="btn" id="go">Open</button><button class="btn ghost" id="back">Back</button></div><p class="feedback" id="fb"></p>');
+  $('go').onclick=()=>{if($('code').value===(D.settings.parentCode||'2013'))parentPanel();else $('fb').textContent='Not that one.'};$('back').onclick=home;$('code').onkeydown=e=>{if(e.key==='Enter')$('go').click()};
+}
+function parentPanel(tab){
+  tab=tab||'today';const t=today();
+  const tabs=[['today','Today'],['skills','Skills'],['history','History'],['prizes','Prizes'],['settings','Settings'],['report','Report']];
+  let body='';
+  if(tab==='today'){const acc=t.items?Math.round(100*t.correct/t.items):0;body='<p><b>'+t.done.length+' of 6</b> quests · '+t.items+' answers · '+acc+'% right · ~'+Math.round(t.secs/60)+' min answering · '+t.breaks+' breaks</p><table><tr><th>Quest</th><th>Result</th></tr>'+QUESTS.map(q=>'<tr><td>'+q.em+' '+q.name+'</td><td>'+esc((t.summaries||{})[q.key]||(t.done.includes(q.key)?'done':'—'))+'</td></tr>').join('')+'</table><h3>Misses today</h3>'+(t.log.filter(l=>!l.ok).length?'<ul style="margin:0;padding-left:20px;font-size:1rem">'+t.log.filter(l=>!l.ok).map(l=>'<li>'+esc(l.m==='math'||l.m==='sparks'?l.q+' → she said '+l.given+' (answer '+l.a+')':l.m==='words'?'word: '+l.w+(l.heard?' (heard "'+l.heard+'")':''):l.m==='speech'?'speech: '+l.t:l.m==='typing'?'typed "'+l.typed+'" for '+l.t:JSON.stringify(l))+'</li>').join('')+'</ul>':'<p class="muted">None yet.</p>')}
+  if(tab==='skills'){body='<table><tr><th>Skill</th><th>Where she is</th><th>Set level</th></tr>'+SKILL_ORDER.map(k=>'<tr><td>'+SKILLS[k].em+' '+SKILLS[k].name+'</td><td>'+esc(lvName(k))+(levelAcc(k,sk(k).level)!==null?'<br><span class="muted">'+levelAcc(k,sk(k).level)+'% right at this level · mastered '+sk(k).mastered.length+'</span>':'')+(skillOpen(k)?'':'<br><span class="muted">locked until basics are ready</span>')+'</td><td><select data-k="'+k+'" class="setlv">'+SKILLS[k].levels.map((L,i)=>'<option value="'+i+'" '+(i===sk(k).level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr>').join('')+'<tr><td>🔤 Word Work</td><td>'+WORDLV[Math.min(sk('words').level,WORDLV.length-1)].n+'</td><td><select data-k="words" class="setlv">'+WORDLV.map((L,i)=>'<option value="'+i+'" '+(i===sk('words').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr><tr><td>📖 Stories</td><td>level '+(D.reading.level+1)+' of 5 · '+D.reading.history.filter(h=>h.title).length+' read</td><td><select id="setStory">'+[0,1,2,3,4].map(i=>'<option value="'+i+'" '+(i===D.reading.level?'selected':'')+'>'+(i+1)+' (~grade '+(i+2)+')</option>').join('')+'</select></td></tr><tr><td>🎤 Echo Stage</td><td>'+SPEECHLV[Math.min(sk('speech').level,SPEECHLV.length-1)].n+'</td><td><select data-k="speech" class="setlv">'+SPEECHLV.map((L,i)=>'<option value="'+i+'" '+(i===sk('speech').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr><tr><td>⌨️ Typing</td><td>'+TYPELV[Math.min(sk('typing').level,TYPELV.length-1)].n+'</td><td><select data-k="typing" class="setlv">'+TYPELV.map((L,i)=>'<option value="'+i+'" '+(i===sk('typing').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr></table><p class="muted" style="font-size:.95rem">Levels move up on their own when she gets 5 of the last 6 right. Only change them by hand if a level is clearly wrong for her.</p><h3>Words to practice</h3><p>'+(Object.keys(D.reading.tricky).filter(w=>D.reading.tricky[w]>0).map(w=>'<span class="chip bad">'+w+'</span>').join('')||'<span class="muted">none</span>')+'</p><h3>Recent stories</h3>'+(D.reading.history.filter(h=>h.title).slice(-5).reverse().map(h=>'<p style="font-size:1rem">'+h.date+' · <b>'+esc(h.title)+'</b> · '+h.comp+'/3 questions'+(h.acc!==null&&h.acc!==undefined?' · '+h.acc+'% words':'')+(h.retell&&h.retell.hits!==undefined?' · retell '+h.retell.hits+'/'+h.retell.of+' key ideas':'')+'</p>').join('')||'<p class="muted">none yet</p>')}
+  if(tab==='history'){const keys=Object.keys(D.days).sort().reverse().slice(0,21);body='<table><tr><th>Day</th><th>Star</th><th>Quests</th><th>Answers</th><th>Right</th></tr>'+keys.map(k=>{const d=D.days[k];return '<tr><td>'+k+'</td><td>'+(d.star?'⭐':'')+'</td><td>'+d.done.length+'/6</td><td>'+d.items+'</td><td>'+(d.items?Math.round(100*d.correct/d.items)+'%':'')+'</td></tr>'}).join('')+'</table>'+badgesHTML()}
+  if(tab==='prizes'){body='<p class="muted" style="font-size:.95rem">A prize is earned by finishing whole days (a day star = all six quests). Each prize counts from the day it was added, so every prize is earned on its own.</p>'+D.prizes.map((p,i)=>'<div class="box"><div class="row" style="justify-content:space-between"><b>'+(p.earned?'✅ ':'🔒 ')+esc(p.name)+'</b><span class="muted">'+(p.earned?'earned '+p.earned:Math.min(p.need,D.dayStars-p.start)+' of '+p.need+' days')+'</span></div><div class="row"><button class="btn ghost sm rmP" data-i="'+i+'">Remove</button>'+(p.earned?'':'<button class="btn ghost sm doneP" data-i="'+i+'">Mark given</button>')+'</div></div>').join('')+'<div class="box gold"><b>Add a prize</b><div class="row"><input type="text" id="pName" class="wide" placeholder="e.g. 🎧 Headphones" style="width:14em"><label>after <input type="number" id="pNeed" min="1" max="120" value="30"> days</label><button class="btn sm" id="addP">Add</button></div><p class="muted" style="font-size:.9rem">Tip: make each new prize a little harder than the last.</p></div>'}
+  if(tab==='settings'){body='<div class="row"><label>Math questions per day <select id="sItems">'+[6,8,10,12].map(n=>'<option '+(n===(D.settings.items||10)?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Break length <select id="sBreak">'+[30,45,60,90].map(n=>'<option value="'+n+'" '+(n===(D.settings.breakSecs||45)?'selected':'')+'>'+n+' sec</option>').join('')+'</select></label></div><div class="row"><label>Her name <input type="text" id="sName" value="'+esc(D.name)+'"></label><label>Avatar <select id="sAv">'+['🦄','🐱','🦊','🐼','🦋','🌟','🐬','🦩'].map(a=>'<option '+(a===D.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label>Grown-up code <input type="text" id="sCode" value="'+esc(D.settings.parentCode||'2013')+'"></label></div><div class="row"><button class="btn sm" id="saveS">Save settings</button></div><hr style="border:0;border-top:1px solid var(--line)"><div class="row"><button class="btn ghost sm" id="resetDay">Reset today\'s quests</button><button class="btn ghost sm" id="exportB">Export everything (copy)</button><button class="btn ghost sm" id="wipe">Start over completely</button></div><p class="muted" style="font-size:.9rem">Progress lives on this iPad in the browser. Export before switching devices, then paste into the Import box on the new one.</p><div class="row"><input type="text" id="importT" class="wide" placeholder="paste export here"><button class="btn ghost sm" id="importB">Import</button></div><p class="muted" style="font-size:.9rem">Microphone: '+(MIC==='yes'?'working':MIC==='no'?'not available on this page (use the hosted link in Safari and tap Allow)':'not tested yet')+'. Version '+VERSION+'.</p>'}
+  if(tab==='report'){const txt=reportText();body='<textarea id="rep" style="width:100%;min-height:260px;font:inherit;font-size:.95rem;border-radius:12px;border:2px solid var(--line);padding:10px;background:var(--card);color:var(--fg)">'+esc(txt)+'</textarea><div class="row"><button class="btn sm" id="copyR">Copy</button><a class="btn sm" style="text-decoration:none;display:inline-block" id="mailR" href="mailto:bahmedov82@gmail.com?subject='+encodeURIComponent('Camila\'s Quest · '+todayKey())+'&body='+encodeURIComponent(txt)+'">✉️ Email to Dad</a></div>'}
+  render('<div class="row" style="justify-content:space-between"><h2>Grown-ups</h2><button class="btn ghost sm" id="back">Back to Camila</button></div><div class="row">'+tabs.map(([k,n])=>'<button class="btn sm '+(k===tab?'':'ghost')+' ptab" data-t="'+k+'">'+n+'</button>').join('')+'</div>'+body);
+  $('back').onclick=home;document.querySelectorAll('.ptab').forEach(b=>b.onclick=()=>parentPanel(b.dataset.t));
+  document.querySelectorAll('.setlv').forEach(s=>s.onchange=()=>{const k=s.dataset.k;sk(k).level=+s.value;save();parentPanel('skills')});
+  if($('setStory'))$('setStory').onchange=()=>{D.reading.level=+$('setStory').value;save();parentPanel('skills')};
+  document.querySelectorAll('.rmP').forEach(b=>b.onclick=()=>{D.prizes.splice(+b.dataset.i,1);save();hud();parentPanel('prizes')});
+  document.querySelectorAll('.doneP').forEach(b=>b.onclick=()=>{D.prizes[+b.dataset.i].earned=todayKey();save();hud();parentPanel('prizes')});
+  if($('addP'))$('addP').onclick=()=>{const n=$('pName').value.trim();if(!n)return;D.prizes.push({name:n,need:Math.max(1,parseInt($('pNeed').value||'30',10)),start:D.dayStars,earned:null,added:new Date().toISOString()});save();hud();parentPanel('prizes')};
+  if($('saveS'))$('saveS').onclick=()=>{D.settings.items=+$('sItems').value;D.settings.breakSecs=+$('sBreak').value;D.name=$('sName').value.trim()||D.name;D.avatar=$('sAv').value;D.settings.parentCode=$('sCode').value.trim()||'2013';save();parentPanel('settings')};
+  if($('resetDay'))$('resetDay').onclick=()=>{if(confirm('Reset today\'s quests? Skill levels are kept.')){delete D.days[todayKey()];save();hud();parentPanel('today')}};
+  if($('wipe'))$('wipe').onclick=()=>{if(confirm('Erase ALL progress, levels, and prizes on this device?')){localStorage.removeItem(KEY);location.reload()}};
+  if($('exportB'))$('exportB').onclick=async()=>{const s=JSON.stringify(D);try{await navigator.clipboard.writeText(s);$('exportB').textContent='Copied ✓'}catch(e){prompt('Copy this:',s)}};
+  if($('importB'))$('importB').onclick=()=>{try{const o=JSON.parse($('importT').value);if(o&&o.skills){localStorage.setItem(KEY,JSON.stringify(o));location.reload()}}catch(e){alert('That did not look like an export.')}};
+  if($('copyR'))$('copyR').onclick=async()=>{try{await navigator.clipboard.writeText($('rep').value);$('copyR').textContent='Copied ✓'}catch(e){$('rep').select()}};
+}
+
+// ---------- first run & boot ----------
+function welcome(){
+  render('<div class="stars">🏝️</div><h1 class="center">Welcome to your Quest, Camila!</h1><p class="center">Every day has six short quests: brain sparks, math, words, a story, speaking, and typing. Finish all six and you earn a day star. Day stars earn real prizes.</p><p class="center">Pick your character:</p><div class="row" style="justify-content:center" id="av">'+['🦄','🐱','🦊','🐼','🦋','🌟','🐬','🦩'].map(a=>'<button class="opt" style="font-size:2.4rem;min-height:0;padding:12px 16px" data-a="'+a+'">'+a+'</button>').join('')+'</div><div class="row" style="justify-content:center"><button class="btn good" id="go" style="font-size:1.5rem">Let\'s go!</button></div>');
+  speak('Welcome to your quest, Camila! Every day has six short quests. Finish all six and you earn a day star. Day stars earn real prizes. Pick your character!');
+  document.querySelectorAll('#av .opt').forEach(b=>b.onclick=()=>{document.querySelectorAll('#av .opt').forEach(x=>x.classList.remove('right'));b.classList.add('right');D.avatar=b.dataset.a;save()});
+  $('go').onclick=()=>{D.welcomed=true;save();home()};
+}
+$('ver').textContent='v'+VERSION;
+$('musicBtn').onclick=()=>setMusic(!MUSIC);setMusic(MUSIC);
+$('parentLink').onclick=parentGate;
+hud();
+if(location.hash==='#debug')window.__cq={D,run:k=>QUESTS.find(q=>q.key===k).run(home),home,parentPanel,save};
+if(D.welcomed)home();else welcome();
+})();
+</script>
+</body>
+</html>
