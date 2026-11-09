@@ -30,7 +30,7 @@ const NO_SR = `delete window.SpeechRecognition; Object.defineProperty(window,'we
     if (await click('#next:not([hidden])')) continue;
     if (await typeAnswer()) continue;
     const cells = await page.$$('#tf .cell, #ta .cell, #ones .cell, #f2 .cell, #tc .opt, #parts .opt, #ev .opt');
-    if (cells.length) { for (const c of cells) { try { await c.click({ timeout: 1500 }); } catch (e) { errors.push('cellfail: '+e.message.split('\n')[0]); } } await page.waitForTimeout(60); if (await page.$('#back:not([hidden])')) await click('#back:not([hidden])'); continue; }
+    if (cells.length) { for (const c of cells) { try { await c.click({ timeout: 1500, force: true }); } catch (e) { errors.push('cellfail: '+e.message.split('\n')[0]); } } await page.waitForTimeout(60); if (await page.$('#back:not([hidden])')) await click('#back:not([hidden])'); continue; }
     if (await click('#say:not([disabled])')) { await page.waitForTimeout(250); continue; }
     if (await click('#mic')) { await page.waitForTimeout(250); continue; }
     if (await click('#rec')) { await page.waitForTimeout(1200); continue; }
