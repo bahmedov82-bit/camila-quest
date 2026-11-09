@@ -9,23 +9,23 @@ const SPEECHLV=[
  {n:'Tongue twisters',hint:'Slow first. Then a little faster. Smile!',items:['She sells seashells by the seashore.','Red lorry, yellow lorry.','Six sticky skeletons.','Fresh fried fish.','Which wristwatches are Swiss wristwatches?','A proper copper coffee pot.']},
 ];
 function speechQuest(done){
-  const N=5;let i=0,right=0;const lvl=()=>sk('speech').level;const used=new Set();
+  const N=5;let i=0,right=0;const lvl=()=>sk('speech').level;const used=new Set();const DR=speechDrills(2);
   function next(){
-    if(i>=N)return finish();
-    const L=SPEECHLV[Math.min(lvl(),SPEECHLV.length-1)];const fresh=L.items.filter(x=>!used.has(x));const target=pick(fresh.length?fresh:L.items);used.add(target);let tries=0;
-    render('<div class="row" style="justify-content:space-between"><span class="muted">🎤 Echo Stage · '+L.n+' · '+(i+1)+' of '+N+'</span></div><div class="bar"><div style="width:'+Math.round(100*i/N)+'%"></div></div><p class="prompt small muted">'+(L.open?'Answer out loud. Tap <b>My turn</b>, then talk.':'Read this out loud. Tap <b>My turn</b>, then say it.')+'</p><p class="prompt '+(target.length<12?'word':'small')+'" style="'+(L.open?'font-weight:500':'')+'">'+esc(target)+'</p><p class="center muted" style="font-size:1rem">'+L.hint+'</p><div class="row" style="justify-content:center">'+(L.open?'':'<button class="btn ghost" id="hear">🔊 Hear it</button>')+'<button class="btn pink" id="say" style="font-size:1.5rem">🎙️ My turn</button></div><p class="feedback" id="fb"></p><div id="words" class="center"></div>');
+    if(i>=N){const L=SPEECHLV[Math.min(lvl(),SPEECHLV.length-1)];const lines=(L.open?SPEECHLV[3]:L).items.slice(0,3);return recordingBooth('Echo Stage · '+L.n,lines,finish)}
+    const L=SPEECHLV[Math.min(lvl(),SPEECHLV.length-1)];const fresh=L.items.filter(x=>!used.has(x));const drill=i<DR.length;const target=drill?DR[i]:pick(fresh.length?fresh:L.items);used.add(target);let tries=0;
+    render('<div class="row" style="justify-content:space-between"><span class="muted">🎤 Echo Stage · '+(drill?'focus sound drill':L.n)+' · '+(i+1)+' of '+N+'</span></div><div class="bar"><div style="width:'+Math.round(100*i/N)+'%"></div></div><p class="prompt small muted">'+(L.open&&!drill?'Answer out loud. Tap <b>My turn</b>, then talk.':'Read this out loud. Tap <b>My turn</b>, then say it.')+'</p><p class="prompt '+(target.length<12?'word':'small')+'" style="'+(L.open?'font-weight:500':'')+'">'+esc(target)+'</p><p class="center muted" style="font-size:1rem">'+(drill?'This is one of your focus sounds. Slow and clear, then say it again at normal speed.':L.hint)+'</p><div class="row" style="justify-content:center">'+(L.open&&!drill?'':'<button class="btn ghost" id="hear">🔊 Hear it</button>')+'<button class="btn pink" id="say" style="font-size:1.5rem">🎙️ My turn</button></div><p class="feedback" id="fb"></p><div id="words" class="center"></div>');
     if($('hear'))$('hear').onclick=()=>speak(target,{force:true,rate:.85});
     if(i===0)speak(L.open?'Answer out loud. Tap My turn, then talk.':'Read this out loud. Tap My turn, then say it.',{force:true});
-    if(L.open)speak(target,{force:true,queue:true});
+    if(L.open&&!drill)speak(target,{force:true,queue:true});
     $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening…';const r=await listen(L.open?20000:(target.length>30?9000:6000));{const sb=$('say');if(sb)sb.disabled=false};
       if(r.err&&MIC==='no'){ // honor mode
         $('fb').textContent='No microphone here. Listen, then say it 3 times, loud and clear.';speak(target+'. '+target+'. '+target+'.',{force:true,rate:.8});return nextBtn(()=>mark(target,true,'honor'),'I said it 3 times! Next')}
       if(r.err){$('fb').textContent='I did not catch that. Tap My turn and speak up.';return}
-      if(L.open){const wc=norm(r.text).split(' ').filter(Boolean).length;$('words').innerHTML='<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text)+'"</p>';
+      if(L.open&&!drill){const wc=norm(r.text).split(' ').filter(Boolean).length;$('words').innerHTML='<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text)+'"</p>';
         if(wc>=8){$('fb').textContent='Great answer! '+wc+' words. Clear and strong.';speak('Great answer! You said '+wc+' words. Clear and strong.');return mark(target,true,'mic',r.text)}
         if(tries<1){tries++;$('fb').textContent='Good start ('+wc+' words). Say a little more. Why? What else?';speak('Good start! Tell me more. Why? What else?',{force:true});return}
         $('fb').textContent='Nice. Next time try for a few sentences.';return mark(target,wc>=4,'mic',r.text)}
-      const m=wordMatch(target,r.text,r.alts).filter(x=>x.w.length>1);const score=m.filter(x=>x.ok).length/m.length;
+      const m=wordMatch(target,r.text,r.alts).filter(x=>x.w.length>1);const score=m.filter(x=>x.ok).length/m.length;if(tries===0)profileWords(m,'echo');
       $('words').innerHTML=m.map(x=>'<span class="chip '+(x.ok?'ok':'bad')+'">'+x.w+'</span>').join('')+'<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text||'…')+'"</p>';
       if(score>=0.9){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));return mark(target,true,'mic',r.text)}
       if(tries<2){tries++;$('fb').textContent='Almost! Listen to the pink words, then try again.';speak('Almost. Listen. '+target+'. Your turn.',{force:true,rate:.8});return}

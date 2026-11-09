@@ -43,7 +43,7 @@ function readWord(w,syl,tip,dis,meta,cb){
     $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening… say it now';const r=await listen(4500);{const sb=$('say');if(sb)sb.disabled=false};
       if(r.err&&MIC==='no')return noMicFlow();
       if(r.err){$('fb').textContent='I did not catch it. Tap My turn and say it a little louder.';return}
-      const ok=wordMatch(w,r.text,r.alts).every(x=>x.ok);
+      const ok=wordMatch(w,r.text,r.alts).every(x=>x.ok);profileWords([{w,ok}],'words');
       if(ok){$('fb').textContent=pick(CHEERS)+' I heard "'+r.text+'".';speak(pick(CHEERS));cb(true,'mic',r.text);return}
       tries++;$('fb').textContent='I heard "'+r.text+'". Not quite. Let\'s break it into parts.';speak('I heard '+r.text+'. Not quite. Let\'s break it into parts.',{force:true});
       setTimeout(()=>helpScreen(true),1600);

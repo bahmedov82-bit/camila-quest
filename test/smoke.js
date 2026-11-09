@@ -33,6 +33,8 @@ const NO_SR = `delete window.SpeechRecognition; Object.defineProperty(window,'we
     if (cells.length) { for (const c of cells) { try { await c.click({ timeout: 1500 }); } catch (e) { errors.push('cellfail: '+e.message.split('\n')[0]); } } await page.waitForTimeout(60); if (await page.$('#back:not([hidden])')) await click('#back:not([hidden])'); continue; }
     if (await click('#say:not([disabled])')) { await page.waitForTimeout(250); continue; }
     if (await click('#mic')) { await page.waitForTimeout(250); continue; }
+    if (await click('#rec')) { await page.waitForTimeout(1200); continue; }
+    if (await click('#stop:not([hidden])')) { await page.waitForTimeout(800); continue; }
     if (await click('#start')) continue;
     if (await click('#stop')) continue;
     const opts = await page.$$('#screen .opt');

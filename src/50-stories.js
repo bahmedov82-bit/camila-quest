@@ -67,7 +67,7 @@ function storyQuest(done){
     $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening… read the whole line';const r=await listen(Math.min(15000,3500+s.length*90));{const sb=$('say');if(sb)sb.disabled=false};
       if(r.err&&MIC==='no'){res.mode='silent';return silentRead()}
       if(r.err){fails++;if(fails>=2){$('fb').textContent='I could not hear that line. Let\'s move on.';return nextBtn(()=>readLine(k+1))}$('fb').textContent='I did not catch that. Tap Read it and read a little louder.';return}
-      const m=wordMatch(s,r.text,r.alts).filter(x=>x.w.length>2);const miss=m.filter(x=>!x.ok).map(x=>x.w);res.checked+=m.length;
+      const m=wordMatch(s,r.text,r.alts).filter(x=>x.w.length>2);const miss=m.filter(x=>!x.ok).map(x=>x.w);res.checked+=m.length;profileWords(m,'story');
       $('chips').innerHTML=m.map(x=>'<span class="chip '+(x.ok?'ok':'bad')+'">'+x.w+'</span>').join('');
       if(!miss.length||miss.length<=Math.max(0,Math.floor(m.length*0.1))){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));coins(2);return nextBtn(()=>readLine(k+1))}
       const tough=miss.slice(0,2);tough.forEach(w=>{res.missed.push(w);D.reading.tricky[w]=(D.reading.tricky[w]||0)+1});save();

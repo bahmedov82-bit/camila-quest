@@ -26,15 +26,15 @@ function checkQuest(done){
     const P=CHECK_PASSAGE;let t0=null,iv=null;
     if(MIC==='yes'){
       // read aloud in one go: start the clock, read, stop; the mic checks words sentence by sentence afterwards is too slow, so we time the whole read and sample accuracy on 3 sentences
-      render('<p class="prompt small">Read this story <b>out loud</b>. Tap Start, read the whole thing, then tap Finished.</p><div class="row" style="justify-content:center"><button class="btn pink" id="start" style="font-size:1.4rem">▶ Start reading</button></div><div id="story" hidden><div class="passage">'+esc(P.text)+'</div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn good" id="stop" style="font-size:1.4rem">✅ Finished</button><span class="big" id="clock" style="font-size:1.4rem">0:00</span></div></div>');
+      render('<p class="prompt small">Read this story <b>out loud</b>. Tap Start, read the whole thing, then tap Finished. I will record it so you can hear how clear you sound.</p><div class="row" style="justify-content:center"><button class="btn pink" id="start" style="font-size:1.4rem">▶ Start reading</button></div><div id="story" hidden><div class="passage">'+esc(P.text)+'</div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn good" id="stop" style="font-size:1.4rem">✅ Finished</button><span class="big" id="clock" style="font-size:1.4rem">0:00</span></div></div>');
       speak('Read this story out loud. Tap Start, read the whole thing, then tap Finished.',{force:true});
-      $('start').onclick=()=>{t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
-      $('stop').onclick=()=>{clearInterval(iv);res.read.secs=Math.round((performance.now()-t0)/1000);res.read.mode='oral';sample(0)};
+      $('start').onclick=async()=>{await recStart();t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
+      $('stop').onclick=async()=>{clearInterval(iv);res.read.secs=Math.round((performance.now()-t0)/1000);res.read.mode='oral';const c=await recStop();if(c){res.read.recorded=true;await saveClip({kind:'check',label:(res.n===1?'Starting Line':'Weekly Check #'+res.n)+' · story read aloud',lines:[P.text],blob:c.blob,secs:c.secs,type:c.type})}sample(0)};
     } else {
       render('<p class="prompt small">Read this story to yourself. Tap Start, read, then tap Finished.</p><div class="row" style="justify-content:center"><button class="btn pink" id="start" style="font-size:1.4rem">▶ Start reading</button></div><div id="story" hidden><div class="passage">'+esc(P.text)+'</div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn good" id="stop" style="font-size:1.4rem">✅ Finished</button><span class="big" id="clock" style="font-size:1.4rem">0:00</span></div></div>');
       speak('Read this story to yourself. Tap Start, read, then tap Finished.',{force:true});
-      $('start').onclick=()=>{t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
-      $('stop').onclick=()=>{clearInterval(iv);res.read.secs=Math.round((performance.now()-t0)/1000);res.read.mode='silent';res.read.acc=null;questions(0)};
+      $('start').onclick=async()=>{await recStart();t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
+      $('stop').onclick=async()=>{clearInterval(iv);res.read.secs=Math.round((performance.now()-t0)/1000);res.read.mode='silent';res.read.acc=null;const c=await recStop();if(c){res.read.recorded=true;await saveClip({kind:'check',label:(res.n===1?'Starting Line':'Weekly Check #'+res.n)+' · story',lines:[P.text],blob:c.blob,secs:c.secs,type:c.type})}questions(0)};
     }
   }
   // accuracy sample: she re-reads 3 sentences into the mic
@@ -46,7 +46,7 @@ function checkQuest(done){
     render('<div class="row" style="justify-content:space-between"><span class="muted">📏 Check · read this line '+(k+1)+' of 3</span></div><p class="prompt small muted">One more time, out loud. Tap <b>Read it</b>, then read.</p><div class="sentence">'+esc(s)+'</div><div class="row" style="justify-content:center"><button class="btn pink" id="say" style="font-size:1.4rem">🎙️ Read it</button></div><p class="feedback" id="fb"></p>');
     $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening…';const r=await listen(Math.min(15000,3500+s.length*90));{const sb=$('say');if(sb)sb.disabled=false}
       if(r.err){fails++;if(fails>=2)return nextBtn(()=>sample(k+1));$('fb').textContent='I did not catch that. Try once more.';return}
-      const m=wordMatch(s,r.text,r.alts).filter(x=>x.w.length>2);sampleOf+=m.length;sampleOk+=m.filter(x=>x.ok).length;$('fb').textContent='Got it.';nextBtn(()=>sample(k+1))};
+      const m=wordMatch(s,r.text,r.alts).filter(x=>x.w.length>2);sampleOf+=m.length;sampleOk+=m.filter(x=>x.ok).length;profileWords(m,'check');$('fb').textContent='Got it.';nextBtn(()=>sample(k+1))};
   }
   function questions(qi){
     const P=CHECK_PASSAGE;if(qi===0)res.read.comp=0;
