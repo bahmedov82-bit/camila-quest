@@ -18,7 +18,7 @@ const D=Object.assign({
   name:'Camila', avatar:'🦄', created:new Date().toISOString(), coins:0, stars:0, dayStars:0, streak:0, lastDay:null,
   days:{}, skills:{}, reading:{level:0,used:[],tricky:{},history:[]}, speech:{level:0,history:[]}, typing:{level:0,history:[]},
   prizes:[{name:'🎧 Headphones',need:30,start:0,earned:null,added:new Date().toISOString()}],
-  badges:[], settings:{items:10,breakSecs:45,parentCode:'2013'}, music:false, cur:null
+  badges:[], checks:[], levelLog:[], settings:{items:10,breakSecs:45,parentCode:'2013'}, music:false, cur:null
 },load());
 function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
@@ -70,7 +70,7 @@ function sk(key){if(!D.skills[key])D.skills[key]={level:0,hist:{},mastered:[],re
 function record(key,level,ok,fast){const s=sk(key);const h=s.hist[level]=(s.hist[level]||[]);h.push(ok?(fast?2:1):0);if(h.length>12)h.shift();save()}
 function isMastered(key,level){const h=sk(key).hist[level]||[];if(h.length>=4&&h.slice(-4).every(x=>x===2))return true;if(h.length<6)return false;return h.slice(-6).filter(x=>x>0).length>=5}
 function levelAcc(key,level){const h=sk(key).hist[level]||[];if(!h.length)return null;return Math.round(100*h.filter(x=>x>0).length/h.length)}
-function advanceIfReady(key,max){const s=sk(key);if(isMastered(key,s.level)&&s.level<max-1){if(!s.mastered.includes(s.level))s.mastered.push(s.level);s.review[s.level]=todayKey();s.level++;save();return true}return false}
+function advanceIfReady(key,max){const s=sk(key);if(isMastered(key,s.level)&&s.level<max-1){if(!s.mastered.includes(s.level))s.mastered.push(s.level);s.review[s.level]=todayKey();s.level++;D.levelLog=D.levelLog||[];D.levelLog.push({d:todayKey(),k:key,l:s.level});save();return true}return false}
 function dueReview(key){const s=sk(key);const due=s.mastered.filter(l=>s.review[l]!==todayKey());return due.length?due[rnd(0,due.length-1)]:null}
 function reviewResult(key,level,ok){const s=sk(key);s.review[level]=todayKey();if(ok){s.reviewMiss[level]=0}else{s.reviewMiss[level]=(s.reviewMiss[level]||0)+1;if(s.reviewMiss[level]>=2){s.mastered=s.mastered.filter(l=>l!==level);s.hist[level]=[];if(level<s.level)s.level=level;s.reviewMiss[level]=0}}save()}
 

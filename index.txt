@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Camila's Quest">
+<meta name="theme-color" content="#2f6bff">
+<title>Camila's Quest</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8F%9D%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<style>
+:root{
+  --bg:#eef3ff; --bg2:#e4f7f1; --card:#ffffff; --fg:#1f2443; --muted:#5d6486;
+  --accent:#ff4fa3; --accent2:#2f6bff; --coin:#ffb400; --good:#19a974; --soft:#f1f3ff; --line:#d9deef; --goodbg:#d8f6ea; --badbg:#ffe0ef;
+  --f-display:'Fredoka','Nunito',system-ui,sans-serif; --f-body:'Nunito',system-ui,sans-serif;
+  --r:22px; --shadow:0 10px 0 0 #cfd6f2;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#171a33;--bg2:#13262a;--card:#232749;--fg:#f3f4ff;--muted:#b4b9d8;--soft:#2b305a;--line:#3a3f6d;--shadow:0 10px 0 0 #0f1128;--goodbg:#1d4a3a;--badbg:#5a2340;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#171a33;--bg2:#13262a;--card:#232749;--fg:#f3f4ff;--muted:#b4b9d8;--soft:#2b305a;--line:#3a3f6d;--shadow:0 10px 0 0 #0f1128;--goodbg:#1d4a3a;--badbg:#5a2340;color-scheme:dark}
+html,body{height:100%}
+body{margin:0;background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--fg);font-family:var(--f-body);font-size:19px;line-height:1.45;
+ padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:14px;min-height:calc(100% - 28px)}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.brand{font-family:var(--f-display);font-weight:700;font-size:1.25rem;letter-spacing:.3px}
+.hud{display:flex;gap:8px;align-items:center;font-family:var(--f-display);font-weight:600;flex-wrap:wrap}
+.pill{background:var(--card);border:2px solid var(--line);border-radius:999px;padding:4px 14px;display:flex;gap:6px;align-items:center;font-variant-numeric:tabular-nums}
+.coin{width:18px;height:18px;border-radius:50%;background:var(--coin);box-shadow:inset 0 -3px 0 #d79400;display:inline-block}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:22px;display:flex;flex-direction:column;gap:16px;min-width:0}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;line-height:1.15}
+h1{font-size:2.1rem} h2{font-size:1.55rem} h3{font-size:1.2rem}
+p{margin:0}
+.muted{color:var(--muted)}
+.btn{font-family:var(--f-display);font-weight:600;font-size:1.25rem;border:0;border-radius:18px;padding:16px 22px;cursor:pointer;color:#fff;background:var(--accent2);box-shadow:0 6px 0 0 #1d4fd0;transition:transform .08s}
+.btn:active{transform:translateY(4px);box-shadow:0 2px 0 0 #1d4fd0}
+.btn.pink{background:var(--accent);box-shadow:0 6px 0 0 #c92f7b}.btn.pink:active{box-shadow:0 2px 0 0 #c92f7b}
+.btn.ghost{background:var(--soft);color:var(--fg);box-shadow:0 6px 0 0 var(--line)}.btn.ghost:active{box-shadow:0 2px 0 0 var(--line)}
+.btn.good{background:var(--good);box-shadow:0 6px 0 0 #0f7a52}.btn.good:active{box-shadow:0 2px 0 0 #0f7a52}
+.btn.sm{font-size:1rem;padding:10px 14px;border-radius:14px}
+.btn[disabled]{opacity:.5;cursor:default}
+.btn:focus-visible,.opt:focus-visible{outline:4px solid var(--coin);outline-offset:3px}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.row>*{min-width:0}
+.center{text-align:center}
+.quests{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.quest{background:var(--soft);border:3px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:6px;font-family:var(--f-display);text-align:left;cursor:pointer;color:var(--fg);font-size:1.05rem}
+.quest .em{font-size:2rem}
+.quest.done{border-color:var(--good);background:var(--goodbg)}
+.quest.now{border-color:var(--accent);box-shadow:0 0 0 4px #ff4fa333}
+.quest.locked{opacity:.55;cursor:default}
+.quest .sub{font-size:.9rem;color:var(--muted);font-family:var(--f-body)}
+.prompt{font-family:var(--f-display);font-size:2.4rem;font-weight:600;text-align:center;line-height:1.2;text-wrap:balance}
+.prompt.small{font-size:1.5rem;font-weight:500}
+.word{font-size:3.4rem;letter-spacing:2px}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.opts.one{grid-template-columns:1fr}
+.opt{font-family:var(--f-display);font-size:2rem;font-weight:600;background:var(--soft);color:var(--fg);border:3px solid var(--line);border-radius:18px;padding:22px 10px;cursor:pointer;min-height:84px}
+.opt:active{transform:translateY(2px)}
+.opt.right{background:var(--goodbg);border-color:var(--good)} .opt.wrong{background:var(--badbg);border-color:var(--accent)}
+.opt.txt{font-size:1.35rem;font-weight:500;text-align:left;padding:16px}
+.visual{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;min-height:40px}
+.dot{width:26px;height:26px;border-radius:50%;background:var(--accent2)}
+.dot.b{background:var(--accent)}
+.tenframe{display:grid;grid-template-columns:repeat(5,34px);gap:5px;background:var(--card);padding:6px;border:3px solid var(--fg);border-radius:8px}
+.cell{width:34px;height:34px;border:2px solid var(--fg);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.cell .dot{width:22px;height:22px}
+.group{display:flex;gap:4px;padding:6px;border:2px dashed var(--muted);border-radius:10px;flex-wrap:wrap;max-width:140px}
+.rod{width:14px;height:90px;background:var(--accent2);border-radius:4px;display:inline-block}
+.one{width:16px;height:16px;background:var(--coin);border-radius:3px;display:inline-block}
+.bar{height:16px;background:var(--line);border-radius:999px;overflow:hidden}
+.bar>div{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .3s}
+.feedback{font-family:var(--f-display);font-size:1.5rem;text-align:center;min-height:1.8em}
+.passage{font-size:1.45rem;line-height:1.8;max-width:34em;margin:0 auto;background:var(--soft);padding:18px 22px;border-radius:16px}
+.sentence{font-family:var(--f-display);font-size:1.9rem;line-height:1.5;text-align:center;background:var(--soft);padding:18px 22px;border-radius:16px}
+.parent{border:3px dashed var(--accent2);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--soft)}
+.parent .tag{font-family:var(--f-display);font-weight:700;color:var(--accent2);font-size:.95rem;letter-spacing:1px;text-transform:uppercase}
+.box{border:3px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--soft)}
+.box.gold{border-color:var(--coin)}
+input[type=number],input[type=text],input[type=password],select{font:inherit;font-size:1.2rem;padding:10px 14px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--fg);width:7em}
+input[type=text].wide{width:min(90%,22em)}
+table{border-collapse:collapse;width:100%;font-size:1rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-display);color:var(--muted);font-weight:600}
+.stars{font-size:2.6rem;letter-spacing:4px;text-align:center}
+.big{font-size:3rem;text-align:center;font-family:var(--f-display);font-weight:700;font-variant-numeric:tabular-nums}
+.speak{background:none;border:2px solid var(--line);border-radius:999px;width:46px;height:46px;font-size:1.3rem;cursor:pointer;color:var(--fg)}
+.frac{display:inline-flex;flex-direction:column;align-items:center;line-height:1;vertical-align:middle}
+.frac span:first-child{border-bottom:3px solid currentColor;padding:0 6px}
+.shape{display:grid;gap:3px;border:3px solid var(--fg);border-radius:8px;padding:3px;background:var(--card)}
+.shape i{display:block;width:34px;height:34px;background:var(--card);border:1px solid var(--line)}
+.shape i.on{background:var(--accent)}
+.tableWrap{overflow-x:auto}
+.chip{display:inline-block;margin:4px;padding:6px 12px;border-radius:10px;background:var(--soft);font-family:var(--f-display)}
+.chip.ok{background:var(--goodbg)} .chip.bad{background:var(--badbg)}
+.tword{padding:2px 4px;border-radius:6px;display:inline-block}
+.tword.miss{background:var(--accent);color:#fff}
+.badge{display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:14px;background:var(--soft);min-width:84px;font-size:.8rem;text-align:center}
+.badge .em{font-size:1.8rem}
+.badge.off{opacity:.35;filter:grayscale(1)}
+.streak{font-family:var(--f-display);font-size:1.1rem}
+.pulse{animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.pop{animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.1);opacity:1}100%{transform:scale(1)}}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:9}
+.confetti i{position:absolute;top:-20px;width:12px;height:18px;border-radius:3px;animation:fall 2.6s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+@media (max-width:460px){.prompt{font-size:1.9rem}.word{font-size:2.6rem}.opt{font-size:1.6rem;padding:16px 8px}body{font-size:17px}.sentence{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand" id="brand">🏝️ Camila's Quest</div>
+    <div class="hud"><span class="pill"><span class="coin"></span><span id="coins">0</span></span><span class="pill">⭐ <span id="stars">0</span></span><span class="pill" id="streakPill">🔥 <span id="streak">0</span></span><button class="pill" id="musicBtn" style="cursor:pointer;font:inherit;color:inherit" aria-pressed="false">🎵 My music: off</button></div>
+  </div>
+  <div id="prizebar" class="row" style="gap:10px"></div>
+  <div class="card" id="screen"></div>
+  <p class="muted center" style="font-size:.9rem">Tap 🔊 on any screen to hear it. Take your time, there is no clock. <button id="parentLink" style="background:none;border:0;color:var(--muted);font:inherit;cursor:pointer;text-decoration:underline">Grown-ups</button> · <span id="ver"></span></p>
+</div>
+<script>
+(function(){
+'use strict';
+const VERSION='1.1';
+// ---------- helpers ----------
+const $=id=>document.getElementById(id);
+const screen=$('screen');
+const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const pick=a=>a[rnd(0,a.length-1)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=rnd(0,i);[a[i],a[j]]=[a[j],a[i]]}return a};
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const todayKey=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const dayNum=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*60000)/86400000);
+const median=a=>{if(!a.length)return null;const s=a.slice().sort((x,y)=>x-y);const m=Math.floor(s.length/2);return s.length%2?s[m]:Math.round(((s[m-1]+s[m])/2)*10)/10};
+function render(html){screen.innerHTML=html;window.scrollTo({top:0})}
+function nextBtn(fn,label,cls){const fb=$('fb');const row=document.createElement('div');row.className='row';row.style.justifyContent='center';row.innerHTML='<button class="btn '+(cls||'good')+'" id="nextBtn">'+(label||'Next ➜')+'</button>';(fb?fb.parentNode:screen).appendChild(row);$('nextBtn').onclick=fn;try{$('nextBtn').focus({preventScroll:true})}catch(e){}}
+function confetti(){try{const c=document.createElement('div');c.className='confetti';const cols=['#ff4fa3','#2f6bff','#ffb400','#19a974','#9b5cff'];for(let i=0;i<70;i++){const s=document.createElement('i');s.style.left=Math.random()*100+'vw';s.style.background=pick(cols);s.style.animationDelay=(Math.random()*.8)+'s';s.style.transform='rotate('+rnd(0,360)+'deg)';c.appendChild(s)}document.body.appendChild(c);setTimeout(()=>c.remove(),3600)}catch(e){}}
+
+// ---------- persistent state ----------
+const KEY='cq-v1';
+const D=Object.assign({
+  name:'Camila', avatar:'🦄', created:new Date().toISOString(), coins:0, stars:0, dayStars:0, streak:0, lastDay:null,
+  days:{}, skills:{}, reading:{level:0,used:[],tricky:{},history:[]}, speech:{level:0,history:[]}, typing:{level:0,history:[]},
+  prizes:[{name:'🎧 Headphones',need:30,start:0,earned:null,added:new Date().toISOString()}],
+  badges:[], checks:[], levelLog:[], settings:{items:10,breakSecs:45,parentCode:'2013'}, music:false, cur:null
+},load());
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
+function today(){const k=todayKey();if(!D.days[k])D.days[k]={done:[],star:false,items:0,correct:0,secs:0,log:[],breaks:0,started:new Date().toISOString()};return D.days[k]}
+function hud(){$('coins').textContent=D.coins;$('stars').textContent=D.stars;$('streak').textContent=D.streak;prizebar()}
+function coins(n){D.coins+=n;hud()}
+function logItem(mod,rec){const t=today();t.items++;if(rec.ok)t.correct++;if(rec.secs)t.secs+=rec.secs;t.log.push(Object.assign({m:mod,at:Date.now()},rec));save()}
+
+// ---------- voice ----------
+let MUSIC=!!D.music;
+function setMusic(on){MUSIC=on;D.music=on;save();const b=$('musicBtn');if(b){b.textContent='🎵 My music: '+(on?'on':'off');b.setAttribute('aria-pressed',on?'true':'false');b.style.borderColor=on?'var(--accent)':''}if(on){try{speechSynthesis.cancel()}catch(e){}}}
+let VOICE=null;
+function pickVoice(){try{const vs=speechSynthesis.getVoices();if(!vs.length)return;const pref=['Samantha','Karen','Ava','Allison','Zoe','Google US English','Microsoft Aria','Microsoft Jenny','Moira','Tessa','Fiona'];for(const n of pref){const v=vs.find(x=>x.name.includes(n)&&x.lang.startsWith('en'));if(v){VOICE=v;return}}VOICE=vs.find(x=>x.lang==='en-US')||vs.find(x=>x.lang.startsWith('en'))||vs[0]}catch(e){}}
+try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
+function speak(t,opts){try{opts=opts||{};if(MUSIC&&!opts.force)return;if(!('speechSynthesis'in window))return;if(!opts.queue)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/[*_#]/g,''));u.rate=opts.rate||1.0;u.pitch=opts.pitch||1.2;u.volume=1;if(VOICE)u.voice=VOICE;speechSynthesis.speak(u)}catch(e){}}
+const CHEERS=['Yes! You got it!','Boom! Nailed it!','That is right, Camila!','Whoa, great thinking!','Look at you go!','You are on fire!','Amazing, Camila!','Yes yes yes!','Super star!','High five!','Your brain is growing!','That is how a boss does it!'];
+const NOTYET=['Not yet, and that is okay. Let\'s look at it together.','So close! Let\'s see how it works.','Good try, Camila. Watch this.','Tricky one! Here is the picture.','Not yet means you are on your way.'];
+
+// ---------- microphone ----------
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
+let MIC=SR?'unknown':'no';let MICFAIL=0;
+function listen(ms){return new Promise(res=>{
+  if(!SR){MIC='no';return res({err:'nosr'})}
+  let r;try{r=new SR()}catch(e){MIC='no';return res({err:'nosr'})}
+  r.lang='en-US';r.interimResults=false;r.maxAlternatives=5;r.continuous=false;
+  let done=false;const finish=v=>{if(done)return;done=true;try{r.stop()}catch(e){}res(v)};
+  r.onresult=e=>{MIC='yes';const alts=[];for(const a of e.results[0])alts.push(a.transcript);finish({text:alts[0]||'',alts})};
+  r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture')MIC='no';if(e.error==='network'){MICFAIL++;if(MICFAIL>=2&&MIC!=='yes')MIC='no'}finish({err:e.error})};
+  r.onend=()=>finish({err:'silence'});
+  try{r.start()}catch(e){MIC='no';finish({err:'start'})}
+  setTimeout(()=>finish({err:'timeout'}),ms||6000);
+})}
+const norm=t=>String(t||'').toLowerCase().replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();
+const NUMWORDS={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20};
+const soundsLike=(a,b)=>{a=norm(a).replace(/'/g,'');b=norm(b).replace(/'/g,'');if(a===b)return true;if(NUMWORDS[a]!==undefined&&String(NUMWORDS[a])===b)return true;if(NUMWORDS[b]!==undefined&&String(NUMWORDS[b])===a)return true;if(a.length>3&&b.length>3&&(a.startsWith(b)||b.startsWith(a)))return true;const f=s=>s.replace(/[aeiouy]/g,'').replace(/(.)\1+/g,'$1');return a.length>3&&f(a)===f(b)&&f(a).length>=2};
+function wordMatch(target,said,alts){const T=norm(target).split(' ').filter(Boolean);const all=[said].concat(alts||[]).map(x=>norm(x).split(' '));return T.map(w=>({w,ok:all.some(S=>S.some(x=>soundsLike(w,x)))}))}
+function pauseMusicGate(next){
+  if(!MUSIC)return next();
+  render('<h2 class="center">🎧 This part needs your ears</h2><p class="center">Pause your music for a few minutes, then tap Ready. It comes back after.</p><div class="row" style="justify-content:center"><button class="btn pink" id="go">Ready, music is paused</button></div>');
+  $('go').onclick=()=>{setMusic(false);D.musicWasOn=true;save();next()};
+}
+function resumeMusicHint(){if(D.musicWasOn){D.musicWasOn=false;save();setMusic(true)}}
+
+// ---------- mastery engine ----------
+// Each skill has ordered levels. A level is mastered when 5 of the last 6 answers at that level were right
+// (and at least 6 answered). Mastered levels come back as quick reviews; two review misses re-open the level.
+function sk(key){if(!D.skills[key])D.skills[key]={level:0,hist:{},mastered:[],review:{},reviewMiss:{}};return D.skills[key]}
+// hist entries: 0 = wrong or needed a hint, 1 = right, 2 = right and fast (recall, not counting)
+function record(key,level,ok,fast){const s=sk(key);const h=s.hist[level]=(s.hist[level]||[]);h.push(ok?(fast?2:1):0);if(h.length>12)h.shift();save()}
+function isMastered(key,level){const h=sk(key).hist[level]||[];if(h.length>=4&&h.slice(-4).every(x=>x===2))return true;if(h.length<6)return false;return h.slice(-6).filter(x=>x>0).length>=5}
+function levelAcc(key,level){const h=sk(key).hist[level]||[];if(!h.length)return null;return Math.round(100*h.filter(x=>x>0).length/h.length)}
+function advanceIfReady(key,max){const s=sk(key);if(isMastered(key,s.level)&&s.level<max-1){if(!s.mastered.includes(s.level))s.mastered.push(s.level);s.review[s.level]=todayKey();s.level++;D.levelLog=D.levelLog||[];D.levelLog.push({d:todayKey(),k:key,l:s.level});save();return true}return false}
+function dueReview(key){const s=sk(key);const due=s.mastered.filter(l=>s.review[l]!==todayKey());return due.length?due[rnd(0,due.length-1)]:null}
+function reviewResult(key,level,ok){const s=sk(key);s.review[level]=todayKey();if(ok){s.reviewMiss[level]=0}else{s.reviewMiss[level]=(s.reviewMiss[level]||0)+1;if(s.reviewMiss[level]>=2){s.mastered=s.mastered.filter(l=>l!==level);s.hist[level]=[];if(level<s.level)s.level=level;s.reviewMiss[level]=0}}save()}
+
+// ---------- day, streak, prizes, badges ----------
+const PRIZE_START=D.dayStars;
+function prizebar(){const el=$('prizebar');if(!el)return;const active=D.prizes.filter(p=>!p.earned).slice(0,2);el.innerHTML=active.map(p=>{const got=Math.min(p.need,D.dayStars-p.start);const pct=Math.round(100*got/p.need);return '<div class="pill" style="flex:1;min-width:150px;display:flex;flex-direction:column;align-items:stretch;gap:4px;padding:8px 14px"><span style="font-size:.95rem">🔒 '+esc(p.name)+' <span class="muted">'+got+'/'+p.need+' days</span></span><div class="bar" style="height:8px"><div style="width:'+pct+'%;background:linear-gradient(90deg,var(--coin),var(--accent))"></div></div></div>'}).join('')}
+const BADGES=[
+ {id:'first',em:'🌱',name:'First Day',test:()=>D.dayStars>=1},
+ {id:'s3',em:'🔥',name:'3-day streak',test:()=>D.streak>=3},
+ {id:'s7',em:'🚀',name:'7-day streak',test:()=>D.streak>=7},
+ {id:'s14',em:'🌟',name:'14-day streak',test:()=>D.streak>=14},
+ {id:'s30',em:'👑',name:'30-day streak',test:()=>D.streak>=30},
+ {id:'ten',em:'🔟',name:'Make-10 Master',test:()=>sk('add').mastered.includes(2)},
+ {id:'tens',em:'🧱',name:'Tens Builder',test:()=>sk('sub').mastered.includes(4)},
+ {id:'times',em:'✖️',name:'Times Tamer',test:()=>sk('mul').mastered.length>=3},
+ {id:'reader',em:'📚',name:'10 Stories',test:()=>D.reading.history.length>=10},
+ {id:'words',em:'🔤',name:'100 Words Read',test:()=>Object.values(D.days).reduce((a,d)=>a+d.log.filter(l=>l.m==='words'&&l.ok).length,0)>=100},
+ {id:'voice',em:'🎤',name:'Clear Speaker',test:()=>D.speech.level>=3},
+ {id:'typist',em:'⌨️',name:'Typist',test:()=>D.typing.level>=3},
+ {id:'coins',em:'💰',name:'500 Coins',test:()=>D.coins>=500},
+];
+function checkBadges(){const fresh=[];BADGES.forEach(b=>{if(!D.badges.includes(b.id)&&b.test()){D.badges.push(b.id);fresh.push(b)}});save();return fresh}
+function badgesHTML(){return '<div class="row" style="justify-content:center;gap:6px">'+BADGES.map(b=>'<div class="badge '+(D.badges.includes(b.id)?'':'off')+'"><span class="em">'+b.em+'</span>'+b.name+'</div>').join('')+'</div>'}
+// ---------- math content ----------
+function mc(q,answer,distract,visual,spoken,how){
+  let opts=new Set([answer]);let tries=0;
+  while(opts.size<4&&tries<40){tries++;const d=pick(distract)(answer);if(d!==answer&&d>=0&&Number.isFinite(d)&&Number.isInteger(d))opts.add(d)}
+  while(opts.size<4)opts.add(answer+opts.size+1);
+  return {q,answer,options:shuffle([...opts]),visual:visual||(()=>''),spoken:spoken||q.replace(/<[^>]+>/g,''),how};
+}
+const near=[a=>a+1,a=>a-1,a=>a+2,a=>a-2,a=>a+10,a=>a-10,a=>a+3];
+const dots=(n,cls)=>'<div class="visual">'+Array.from({length:n},()=>'<span class="dot '+(cls||'')+'"></span>').join('')+'</div>';
+const tenframe=(n,m)=>{let h='<div class="visual"><div class="tenframe">';for(let i=0;i<10;i++){h+='<div class="cell">'+(i<n?'<span class="dot"></span>':(i<n+(m||0)?'<span class="dot b"></span>':''))+'</div>'}return h+'</div></div>'};
+const blocks=(n,hl)=>{const t=Math.floor(n/10),o=n%10;return '<div class="visual" style="gap:16px;align-items:flex-end"><div style="display:flex;gap:4px">'+Array.from({length:t},()=>'<span class="rod"></span>').join('')+'</div><div style="display:grid;grid-template-columns:repeat(5,16px);gap:3px">'+Array.from({length:o},(_,i)=>'<span class="one" style="'+(hl&&i>=o-hl?'background:var(--accent)':'')+'"></span>').join('')+'</div></div><p class="center muted" style="font-size:1rem">'+t+' tens and '+o+' ones</p>'};
+const groups=(g,n)=>'<div class="visual">'+Array.from({length:g},()=>'<div class="group">'+Array.from({length:n},()=>'<span class="dot"></span>').join('')+'</div>').join('')+'</div>';
+const groupsTot=(g,n)=>'<div class="visual" style="gap:10px">'+Array.from({length:g},(_,i)=>'<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div class="group">'+Array.from({length:n},()=>'<span class="dot" style="width:12px;height:12px"></span>').join('')+'</div><span style="font-weight:700">'+(i+1)*n+'</span></div>').join('')+'</div>';
+const shape=(parts,on)=>{let h='<div class="visual"><div class="shape" style="grid-template-columns:repeat('+Math.min(parts,4)+',34px)">';for(let i=0;i<parts;i++)h+='<i class="'+(i<on?'on':'')+'"></i>';return h+'</div></div>'};
+const frac=(a,b)=>'<span class="frac"><span>'+a+'</span><span>'+b+'</span></span>';
+const clue=t=>'<p class="center muted" style="font-size:1rem">Clue: '+t+'</p>';
+const T=(a)=>Math.floor(a/10),O=(a)=>a%10;
+const skipList=(n,k)=>Array.from({length:k},(_,i)=>(i+1)*n).join(', ');
+
+const SKILLS={};
+// 1 Number Sense
+SKILLS.numbers={name:'Number Island',em:'🔢',levels:[
+ {n:'See it fast (1-5)',g:()=>{const n=rnd(1,5);return Object.assign(mc('How many dots?',n,near,()=>dots(n),'How many dots do you see? Try to see it without counting one by one.','Look for a pattern, like dice. '+n+' dots.'),{show:true,teach:{type:'count',n}})}},
+ {n:'Ten-frame (6-10)',g:()=>{const n=rnd(6,10);return Object.assign(mc('How many dots?',n,near,()=>tenframe(n),'How many dots? The top row holds 5.','The top row is 5. Then count on: '+(n>5?'5 and '+(n-5)+' more is '+n:n)+'.'),{show:true,teach:{type:'count',n}})}},
+ {n:'Which is bigger (to 20)',g:()=>{const a=rnd(3,20),b=rnd(3,20);if(a===b)return null;const q='Which is bigger: '+a+' or '+b+'?';return {q,answer:Math.max(a,b),options:shuffle([a,b,Math.max(a,b)+1,Math.min(a,b)-1].filter((v,i,s)=>s.indexOf(v)===i&&v>=0)).slice(0,4),visual:()=>dots(Math.min(a,b))+dots(Math.max(a,b),'b'),spoken:q,show:true,how:'Count the blue dots: '+Math.min(a,b)+'. Count the pink dots: '+Math.max(a,b)+'. More dots means the bigger number: '+Math.max(a,b)+'.'}}},
+ {n:'Before and after (to 100)',g:()=>{const n=rnd(11,98);const after=rnd(0,1);return mc(after?'What number comes right after '+n+'?':'What number comes right before '+n+'?',after?n+1:n-1,near,()=>'<p class="center muted" style="font-size:1.4rem">'+(n-2)+', '+(n-1)+', <b>'+n+'</b>, '+(n+1)+', '+(n+2)+'</p>',undefined,after?'Count up from '+n+': '+n+', '+(n+1)+'. Right after '+n+' is '+(n+1)+'.':'Count up to '+n+': '+(n-2)+', '+(n-1)+', '+n+'. Right before '+n+' is '+(n-1)+'.')}},
+ {n:'Tens and ones',g:()=>{const t=rnd(2,9),o=rnd(0,9);return Object.assign(mc(t+' tens and '+o+' ones = ?',t*10+o,[a=>a+10,a=>a-10,a=>a+1,a=>a-1,a=>+(''+a).split('').reverse().join('')],()=>blocks(t*10+o),t+' tens and '+o+' ones. What number is that?','Tens go first, ones go second. '+t+' tens is '+(t*10)+'. Plus '+o+' ones is '+(t*10+o)+'.'),{show:true})}},
+ {n:'Skip counting 2, 5, 10',g:()=>{const step=pick([2,5,10]);const start=step*rnd(1,5);const seq=[start,start+step,start+2*step];return mc('Counting by '+step+'s: '+seq.join(', ')+', __?',start+3*step,[a=>a+1,a=>a-1,a=>a+step,a=>a-step,a=>a+2],()=>clue('each jump adds '+step),'Counting by '+step+'s. '+seq.join(', ')+', what comes next?','Each jump adds '+step+'. '+seq[2]+' plus '+step+' is '+(start+3*step)+'.')}},
+ {n:'Compare hundreds',g:()=>{const a=rnd(100,999),b=rnd(100,999);if(a===b||Math.floor(a/100)===Math.floor(b/100))return null;return mc('Which is bigger: '+a+' or '+b+'?',Math.max(a,b),[a=>a-100,a=>a+100,a=>a-10],()=>clue('look at the first digit, the hundreds'),'Which is bigger, '+a+' or '+b+'?','Look at the first digit of each number. '+Math.floor(a/100)+' hundreds and '+Math.floor(b/100)+' hundreds. The bigger hundreds digit wins: '+Math.max(a,b)+'.')}},
+ {n:'Round to the nearest 10',g:()=>{const n=rnd(11,98);if(n%10===5||n%10===0)return null;const r=Math.round(n/10)*10;return mc('Round '+n+' to the nearest 10',r,[a=>a+10,a=>a-10,a=>a+5,a=>a-5],()=>'<p class="center muted" style="font-size:1.3rem">'+(T(n)*10)+' ← '+n+' → '+(T(n)*10+10)+'</p>'+clue('which ten is closer?'),'Round '+n+' to the nearest ten.',n+' sits between '+(T(n)*10)+' and '+(T(n)*10+10)+'. The ones digit is '+O(n)+'. '+(O(n)<5?'Less than 5, so go down to '+r:'5 or more, so go up to '+r)+'.')}},
+]};
+// 2 Adding (mental-math strategies, no fingers)
+SKILLS.add={name:'Adding Island',em:'➕',levels:[
+ {n:'Count on (within 5)',g:()=>{const a=rnd(1,3),b=rnd(1,2);return Object.assign(mc(a+' + '+b+' = ?',a+b,near,()=>dots(a)+'<p class="center">+</p>'+dots(b,'b'),a+' plus '+b),{show:true,teach:{type:'on',start:a,n:b},how:'Start at '+a+'. Count on '+b+' more: '+Array.from({length:b},(_,i)=>a+i+1).join(', ')+'.'})}},
+ {n:'Ten-frame adding (within 10)',g:()=>{const a=rnd(2,6),b=rnd(1,10-a);return Object.assign(mc(a+' + '+b+' = ?',a+b,near,()=>tenframe(a,b),a+' plus '+b),{show:true,teach:{type:'on',start:a,n:b},how:'Blue dots: '+a+'. Pink dots: '+b+'. Start at '+a+' and count on the pink ones: '+Array.from({length:b},(_,i)=>a+i+1).join(', ')+'.'})}},
+ {n:'Make 10 partners',g:()=>{const a=rnd(1,9);return Object.assign(mc(a+' + ? = 10',10-a,near,()=>tenframe(a)+clue('the box holds 10. How many empty spaces?'),a+' plus what makes 10? Count the empty spaces in the box.'),{show:true,teach:{type:'missing',start:a,target:10},how:'The box holds 10. '+a+' are filled. Count the empty spaces: '+(10-a)+'. So '+a+' plus '+(10-a)+' is 10.'})}},
+ {n:'Doubles and near doubles',g:()=>{const a=rnd(2,9);const nearD=rnd(0,1);const b=nearD?a+1:a;return mc(a+' + '+b+' = ?',a+b,near,()=>dots(a)+dots(b,'b')+clue(nearD?a+' + '+a+' is a double. Then one more.':'a double: two of the same'),a+' plus '+b,nearD?a+' plus '+a+' is '+(2*a)+'. One more makes '+(a+b)+'.':a+' plus '+a+' is a double. Doubles are worth remembering: '+(2*a)+'.')}},
+ {n:'Missing number (to 20)',g:()=>{const t=rnd(7,15),a=rnd(2,t-2);return Object.assign(mc(a+' + ? = '+t,t-a,near,()=>tenframe(Math.min(a,10))+(t>10?tenframe(0):'')+clue('start at '+a+'. How many more to reach '+t+'?'),a+' plus what equals '+t+'? Start at '+a+' and count up to '+t+'.'),{show:true,teach:{type:'missing',start:a,target:t},how:'Start at '+a+'. Count up until you reach '+t+': '+Array.from({length:t-a},(_,i)=>a+i+1).join(', ')+'. That took '+(t-a)+' jumps. So the missing number is '+(t-a)+'.'})}},
+ {n:'Bridge through 10 (like 8 + 5)',g:()=>{const a=rnd(5,9),b=rnd(2,9);if(a+b<=10)return null;return Object.assign(mc(a+' + '+b+' = ?',a+b,near,()=>tenframe(a)+tenframe(b)+clue('fill the first box to 10, then see what is left'),a+' plus '+b),{show:true,teach:{type:'bridge',a,b},how:a+' needs '+(10-a)+' to make 10. Take '+(10-a)+' from the '+b+'. Now you have 10 and '+(b-(10-a))+' left. 10 plus '+(b-(10-a))+' is '+(a+b)+'.'})}},
+ {n:'Two-digit + ones (no carry)',g:()=>{const a=rnd(21,86),b=rnd(1,9);if(O(a)+b>9)return null;return Object.assign(mc(a+' + '+b+' = ?',a+b,near,()=>blocks(a)+clue('add '+b+' to the ones. The tens stay the same.'),a+' plus '+b),{show:true,how:a+' is '+T(a)+' tens and '+O(a)+' ones. Only the ones change: '+O(a)+' plus '+b+' is '+(O(a)+b)+'. Keep the '+T(a)+' tens. '+(a+b)+'.'})}},
+ {n:'Add tens (like 34 + 20)',g:()=>{const a=rnd(12,69),b=10*rnd(1,3);return Object.assign(mc(a+' + '+b+' = ?',a+b,[a=>a+10,a=>a-10,a=>a+1,a=>a-1],()=>blocks(a)+clue('adding '+b+' means adding '+(b/10)+' tens. The ones stay.'),a+' plus '+b),{show:true,how:b+' is '+(b/10)+' tens. '+T(a)+' tens plus '+(b/10)+' tens is '+(T(a)+b/10)+' tens. The ones stay '+O(a)+'. So '+(a+b)+'.'})}},
+ {n:'Two-digit + two-digit (carry)',g:()=>{const a=rnd(15,78),b=rnd(15,78);if(O(a)+O(b)<10||a+b>99)return null;return Object.assign(mc(a+' + '+b+' = ?',a+b,[a=>a-10,a=>a+10,a=>a-1,a=>a+1],()=>blocks(a)+blocks(b),a+' plus '+b),{how:'Ones first: '+O(a)+' plus '+O(b)+' is '+(O(a)+O(b))+'. That is 10 or more, so trade 10 ones for 1 ten. Write '+((O(a)+O(b))%10)+' and carry 1. Tens: '+T(a)+' plus '+T(b)+' plus 1 is '+(T(a)+T(b)+1)+'. Answer: '+(a+b)+'.'})}},
+ {n:'Three-digit adding',g:()=>{const a=rnd(120,780),b=rnd(120,780);if(a+b>999)return null;return Object.assign(mc(a+' + '+b+' = ?',a+b,[a=>a-100,a=>a+100,a=>a-10,a=>a+10],()=>'',a+' plus '+b),{how:'Right to left. Ones: '+O(a)+' + '+O(b)+'. Tens: '+(T(a)%10)+' + '+(T(b)%10)+'. Hundreds: '+Math.floor(a/100)+' + '+Math.floor(b/100)+'. Carry a 1 whenever a column is 10 or more. Total: '+(a+b)+'.'})}},
+]};
+// 3 Take away
+SKILLS.sub={name:'Take-Away Island',em:'➖',levels:[
+ {n:'Take away (within 5)',g:()=>{const a=rnd(2,5),b=rnd(1,a-1);return Object.assign(mc(a+' − '+b+' = ?',a-b,near,()=>dots(a),a+' take away '+b),{show:true,teach:{type:'away',total:a,n:b},how:'Start with '+a+'. Cross out '+b+'. Count what is left: '+(a-b)+'.'})}},
+ {n:'Take away (within 10)',g:()=>{const a=rnd(5,10),b=rnd(1,a-1);return Object.assign(mc(a+' − '+b+' = ?',a-b,near,()=>tenframe(a),a+' take away '+b),{show:true,teach:{type:'away',total:a,n:b},how:'Start with '+a+'. Cross out '+b+'. What is left is '+(a-b)+'.'})}},
+ {n:'From 10',g:()=>{const b=rnd(1,9);return Object.assign(mc('10 − '+b+' = ?',10-b,near,()=>tenframe(10)+clue('all 10 are filled. Cover '+b+'. How many left?'),'10 take away '+b),{show:true,teach:{type:'away',total:10,n:b},how:'10 take away '+b+'. Think of the make-10 partner: '+b+' and '+(10-b)+' make 10. So the answer is '+(10-b)+'.'})}},
+ {n:'Teen minus (like 13 − 5)',g:()=>{const a=rnd(11,18),b=rnd(2,9);if(a-b>9||a-b<1)return null;return Object.assign(mc(a+' − '+b+' = ?',a-b,near,()=>tenframe(10)+tenframe(a-10)+clue('take the ones first, then take the rest from the 10'),a+' take away '+b),{show:true,teach:{type:'away',total:a,n:b},how:a+' is 10 and '+(a-10)+'. Take away the '+(a-10)+' first. You still need to take '+(b-(a-10))+' more from the 10. 10 take away '+(b-(a-10))+' is '+(a-b)+'.'})}},
+ {n:'Two-digit − ones (like 89 − 8)',g:()=>{const a=rnd(25,89),b=rnd(1,Math.max(1,O(a)));if(O(a)===0)return null;return Object.assign(mc(a+' − '+b+' = ?',a-b,near,()=>blocks(a,b)+clue('only the ones get taken away. The tens stay.'),a+' minus '+b),{show:true,teach:{type:'ones',a,b},how:a+' is '+T(a)+' tens and '+O(a)+' ones. Only take away ones: '+O(a)+' take away '+b+' is '+(O(a)-b)+'. The '+T(a)+' tens stay. Answer: '+(a-b)+'.'})}},
+ {n:'Take away tens (like 64 − 20)',g:()=>{const a=rnd(31,89),b=10*rnd(1,T(a)-1);return Object.assign(mc(a+' − '+b+' = ?',a-b,[a=>a-10,a=>a+10,a=>a-1,a=>a+1],()=>blocks(a)+clue('taking away '+b+' means taking '+(b/10)+' sticks of ten'),a+' minus '+b),{show:true,how:b+' is '+(b/10)+' tens. '+T(a)+' tens take away '+(b/10)+' tens is '+(T(a)-b/10)+' tens. The ones stay '+O(a)+'. Answer: '+(a-b)+'.'})}},
+ {n:'Borrow (like 52 − 17)',g:()=>{const a=rnd(30,90),b=rnd(11,a-5);if(O(a)>=O(b))return null;return Object.assign(mc(a+' − '+b+' = ?',a-b,[a=>a-10,a=>a+10,a=>a-1,a=>a+1],()=>blocks(a),a+' minus '+b),{how:'Ones: '+O(a)+' take away '+O(b)+'? Not enough. Open one ten into 10 ones: now '+(O(a)+10)+' ones and '+(T(a)-1)+' tens. '+(O(a)+10)+' take away '+O(b)+' is '+(O(a)+10-O(b))+'. Tens: '+(T(a)-1)+' take away '+T(b)+' is '+(T(a)-1-T(b))+'. Answer: '+(a-b)+'.'})}},
+ {n:'Difference (how many more)',g:()=>{const a=rnd(12,60),b=rnd(5,a-3);return mc('Camila has '+a+' stickers. Her friend has '+b+'. How many more does Camila have?',a-b,near,()=>clue('think: '+b+' + ? = '+a),'Camila has '+a+' stickers. Her friend has '+b+'. How many more does Camila have?','How many more means find the difference. Count up from '+b+' to '+a+'. That is '+(a-b)+'.')}},
+]};
+// 4 Times & groups
+SKILLS.mul={name:'Times Island',em:'✖️',levels:[
+ {n:'Groups of 2 and 5',g:()=>{const g=rnd(2,4),n=pick([2,5]);return Object.assign(mc(g+' groups of '+n+' = ?',g*n,near,()=>groupsTot(g,n)+clue('count by '+n+'s: '+skipList(n,g)),g+' groups of '+n+'. Count by '+n+'s.'),{show:true,teach:{groups:g,per:n},how:'Count by '+n+'s, one number per group: '+skipList(n,g)+'. '+(g*n)+'.'})}},
+ {n:'Times 10',g:()=>{const b=rnd(2,9);return Object.assign(mc(b+' × 10 = ?',b*10,[a=>a+10,a=>a-10,a=>a/10,a=>a+1],()=>'<div class="visual" style="gap:6px">'+Array.from({length:b},()=>'<span class="rod"></span>').join('')+'</div>'+clue(b+' sticks of ten. Count by tens: '+skipList(10,b)+'. Or write '+b+' and put a 0 after it.'),b+' times 10 means '+b+' tens.'),{show:true,teach:{groups:b,per:10},how:b+' times 10 means '+b+' tens. Count by tens: '+skipList(10,b)+'. The shortcut: write '+b+' and put a zero after it. '+(b*10)+'.'})}},
+ {n:'Times 2 and 5',g:()=>{const a=pick([2,5]),b=rnd(2,9);return Object.assign(mc(b+' × '+a+' = ?',a*b,[a=>a+2,a=>a-2,a=>a+5,a=>a-5,a=>a+10],()=>groupsTot(b,a)+clue('count by '+a+'s, '+b+' times'),b+' times '+a+'. Count by '+a+'s, '+b+' times.'),{show:true,teach:{groups:b,per:a},how:b+' times '+a+' means '+b+' groups of '+a+'. Count by '+a+'s: '+skipList(a,b)+'. '+(a*b)+'.'})}},
+ {n:'Times 3 and 4',g:()=>{const a=pick([3,4]),b=rnd(2,9);return Object.assign(mc(b+' × '+a+' = ?',a*b,[a=>a+3,a=>a-3,a=>a+4,a=>a-4,a=>a+1],()=>groups(b,a)+clue(b+' groups of '+a+'. Count by '+a+'s.'),b+' times '+a),{teach:{groups:b,per:a},how:'Count by '+a+'s, '+b+' times: '+skipList(a,b)+'. '+(a*b)+'. Or double: '+(a===4?b+' times 2 is '+(2*b)+', doubled is '+(4*b):b+' times 2 is '+(2*b)+', plus one more '+b+' is '+(3*b))+'.'})}},
+ {n:'Times 6 to 9 (use 10 or 5)',g:()=>{const a=rnd(6,9),b=rnd(3,9);const how=a===9?b+' times 10 is '+(10*b)+'. Take away one group of '+b+': '+(10*b)+' minus '+b+' is '+(9*b)+'.':a===6?b+' times 5 is '+(5*b)+'. Add one more '+b+': '+(6*b)+'.':a===7?b+' times 5 is '+(5*b)+'. Add two more '+b+'s, that is '+(2*b)+': '+(7*b)+'.':b+' times 10 is '+(10*b)+'. Take away two groups of '+b+', that is '+(2*b)+': '+(8*b)+'.';return Object.assign(mc(b+' × '+a+' = ?',a*b,[a=>a+6,a=>a-6,a=>a+7,a=>a-8,a=>a+1,a=>a-1],()=>groups(b,a)+clue(a===9?'think '+b+' × 10, then take away '+b:a===6?'think '+b+' × 5, then add '+b:'count by '+a+'s or use what you know'),b+' times '+a),{teach:{groups:b,per:a},how})}},
+ {n:'Sharing (division)',g:()=>{const b=rnd(2,9),q=rnd(2,9);return Object.assign(mc((b*q)+' ÷ '+b+' = ?',q,near,()=>groups(q,b)+clue('how many groups of '+b+' make '+(b*q)+'?'),(b*q)+' divided by '+b),{teach:{groups:q,per:b},how:'How many groups of '+b+' make '+(b*q)+'? Count by '+b+'s until you reach '+(b*q)+': '+skipList(b,q)+'. That took '+q+' groups.'})}},
+ {n:'Two-digit × one-digit',g:()=>{const a=rnd(12,48),b=rnd(2,6);return Object.assign(mc(a+' × '+b+' = ?',a*b,[a=>a-10,a=>a+10,a=>a-b,a=>a+b],()=>clue('break '+a+' into '+(T(a)*10)+' and '+O(a)),a+' times '+b),{how:'Break '+a+' into '+(T(a)*10)+' and '+O(a)+'. '+(T(a)*10)+' times '+b+' is '+(T(a)*10*b)+'. '+O(a)+' times '+b+' is '+(O(a)*b)+'. Add them: '+(a*b)+'.'})}},
+]};
+// 5 Money
+SKILLS.money={name:'Muffin Money',em:'🧁',levels:[
+ {n:'Price × how many',g:()=>{const n=rnd(2,5),p=pick([2,3]);return Object.assign(mc('A muffin costs $'+p+'. How much for '+n+' muffins?',p*n,near,()=>groups(n,p),'A muffin costs '+p+' dollars. How much for '+n+' muffins?'),{teach:{groups:n,per:p},how:n+' muffins at '+p+' dollars each. Count by '+p+'s: '+skipList(p,n)+'. '+(p*n)+' dollars.'})}},
+ {n:'Change from $5',g:()=>{const c=rnd(1,4);return Object.assign(mc('A customer pays $5 for a $'+c+' muffin. How much change?',5-c,near,()=>tenframe(c)+clue('count up from '+c+' to 5'),'A customer pays 5 dollars for a '+c+' dollar muffin. How much change?'),{show:true,teach:{type:'missing',start:c,target:5},how:'Count up from the price to what they paid: '+c+' up to 5 is '+(5-c)+'. Change: '+(5-c)+' dollars.'})}},
+ {n:'Change from $10',g:()=>{const c=rnd(2,8);return Object.assign(mc('A customer pays $10 for $'+c+' of treats. How much change?',10-c,near,()=>tenframe(c)+clue('what makes 10 with '+c+'?'),'A customer pays 10 dollars for '+c+' dollars of treats. How much change?'),{show:true,teach:{type:'missing',start:c,target:10},how:c+' and '+(10-c)+' make 10. Change: '+(10-c)+' dollars.'})}},
+ {n:'Coins (quarters and dimes)',g:()=>{const q=rnd(1,3),d=rnd(0,3);return Object.assign(mc(q+' quarter'+(q>1?'s':'')+' and '+d+' dime'+(d!==1?'s':'')+' = ? cents',q*25+d*10,[a=>a+5,a=>a-5,a=>a+10,a=>a-10,a=>a+25],()=>'<div class="visual">'+Array.from({length:q},()=>'<span class="pill">25¢</span>').join('')+Array.from({length:d},()=>'<span class="pill" style="font-size:.9rem">10¢</span>').join('')+'</div>'+clue('quarters: '+skipList(25,q)+(d?'. Then dimes add 10 each':'')),q+' quarters and '+d+' dimes. How many cents?'),{show:true,how:'Quarters count by 25: '+skipList(25,q)+'. '+(d?'Then add dimes by 10: '+Array.from({length:d},(_,i)=>q*25+(i+1)*10).join(', ')+'.':'')+' Total: '+(q*25+d*10)+' cents.'})}},
+ {n:'Profit = money in − cost',g:()=>{const cost=rnd(3,9),rev=cost+rnd(4,12);return mc('Camila spent $'+cost+' on lemons. She sold lemonade for $'+rev+'. What is her profit?',rev-cost,near,()=>clue('profit is what is left after you pay your cost: '+rev+' − '+cost),'Camila spent '+cost+' dollars on lemons. She sold lemonade for '+rev+' dollars. What is her profit?','Profit is the money you keep after paying your cost. '+rev+' take away '+cost+' is '+(rev-cost)+' dollars.')}},
+ {n:'Dollars and cents',g:()=>{const a=pick([1.5,2.25,3.75,4.5]),b=pick([1.25,2.5,0.75,3.5]);const ans=Math.round((a+b)*100)/100;return {q:'$'+a.toFixed(2)+' + $'+b.toFixed(2)+' = ?',answer:ans,options:shuffle([ans,Math.round((ans+1)*100)/100,Math.round((ans-0.5)*100)/100,Math.round((ans+0.25)*100)/100]),visual:()=>clue('add the dollars, then the cents. 100 cents is a dollar.'),spoken:a+' dollars plus '+b+' dollars',fmt:v=>'$'+Number(v).toFixed(2),how:'Dollars: '+Math.floor(a)+' plus '+Math.floor(b)+' is '+(Math.floor(a)+Math.floor(b))+'. Cents: '+Math.round((a%1)*100)+' plus '+Math.round((b%1)*100)+' is '+(Math.round((a%1)*100)+Math.round((b%1)*100))+' cents. 100 cents makes a dollar. Total: $'+ans.toFixed(2)+'.'}}},
+]};
+// 6 Fractions
+const FH=clue('the bottom number is how many equal pieces. The top number is how many are pink.');
+SKILLS.frac={name:'Fraction Island',em:'🍕',levels:[
+ {n:'What is one half?',g:()=>({q:'One half means 1 of 2 equal pieces. Which picture shows one half?',answer:'half',options:shuffle(['half','third','quarter','whole']),labels:{half:shape(2,1),third:shape(3,1),quarter:shape(4,1),whole:shape(2,2)},visual:()=>clue('look for a shape cut into 2 pieces with 1 pink'),spoken:'One half means one of two equal pieces. Which picture shows one half?',show:true,how:'Half means cut into 2 equal pieces, and 1 is pink. Find the shape with exactly 2 pieces and 1 pink.'})},
+ {n:'Name the fraction',g:()=>{const d=pick([3,4,5,6]),n=rnd(1,d-1);return {q:'What fraction is pink?',answer:n+'/'+d,options:shuffle([n+'/'+d,(d-n)+'/'+d,n+'/'+(d+1),(n+1)+'/'+d].filter((v,i,s)=>s.indexOf(v)===i)),visual:()=>shape(d,n)+FH,spoken:'The shape has '+d+' pieces. Count the pink ones. What fraction is pink?',html:true,show:true,how:'Count all the pieces: '+d+'. That is the bottom. Count the pink: '+n+'. That is the top. '+n+' over '+d+'.'}}},
+ {n:'Which is bigger?',g:()=>{const a=pick([[1,2],[1,3],[1,4],[2,3],[3,4]]),b=pick([[1,2],[1,3],[1,4],[2,3],[3,4],[1,8]]);if(a[0]/a[1]===b[0]/b[1])return null;const big=a[0]/a[1]>b[0]/b[1]?a:b;return {q:'Which fraction is bigger?',answer:big.join('/'),options:shuffle([a.join('/'),b.join('/')]),visual:()=>'<div class="row" style="justify-content:center;gap:24px"><div class="center">'+frac(a[0],a[1])+shape(a[1],a[0])+'</div><div class="center">'+frac(b[0],b[1])+shape(b[1],b[0])+'</div></div>'+clue('more pink means bigger'),spoken:'Which fraction is bigger? Look at which picture has more pink.',html:true,show:true,how:'Look at the pictures. More pink means the bigger fraction. '+big[0]+' over '+big[1]+' has more pink.'}}},
+ {n:'Same as one half',g:()=>{const k=rnd(2,4);return {q:'Which equals '+frac(1,2)+'?',answer:k+'/'+(2*k),options:shuffle([k+'/'+(2*k),(k+1)+'/'+(2*k),k+'/'+(2*k+1),'1/'+(2*k)]),visual:()=>'<div class="row" style="justify-content:center;gap:24px"><div class="center">'+frac(1,2)+shape(2,1)+'</div><div class="center">?'+shape(2*k,k)+'</div></div>'+clue('same amount of pink, cut into more pieces'),spoken:'Which fraction equals one half? Same amount of pink, cut into more pieces.',html:true,show:true,how:'Half is pink. Cut into '+(2*k)+' pieces, half of them is '+k+'. So '+k+' over '+(2*k)+' equals one half.'}}},
+ {n:'Add same-size pieces',g:()=>{const d=pick([5,6,8]),a=rnd(1,d-3),b=rnd(1,d-a-1);return {q:frac(a,d)+' + '+frac(b,d)+' = ?',answer:(a+b)+'/'+d,options:shuffle([(a+b)+'/'+d,(a+b)+'/'+(2*d),(a+b+1)+'/'+d,(a*b)+'/'+d].filter((v,i,s)=>s.indexOf(v)===i)),visual:()=>shape(d,a)+'<p class="center">+</p>'+shape(d,b)+clue('same size pieces, so just add the pink'),spoken:a+' over '+d+' plus '+b+' over '+d+'.',html:true,show:true,how:'The pieces are the same size, so the bottom stays '+d+'. Add the pink: '+a+' plus '+b+' is '+(a+b)+'. '+(a+b)+' over '+d+'.'}}},
+ {n:'Fraction of a number',g:()=>{const d=pick([2,3,4,5]),n=d*rnd(2,6);const nm=d===2?'half':d===3?'third':d===4?'quarter':'fifth';return Object.assign(mc('What is '+frac(1,d)+' of '+n+'?',n/d,near,()=>groups(d,n/d)+clue('split '+n+' into '+d+' equal groups. Count ONE group.'),'What is one '+nm+' of '+n+'? Split '+n+' into '+d+' equal groups.'),{show:true,how:'Split '+n+' into '+d+' equal groups. Each group has '+(n/d)+'. One '+nm+' of '+n+' is '+(n/d)+'.'})}},
+]};
+const SKILL_ORDER=['numbers','add','sub','mul','money','frac'];
+// Prerequisites so hard islands do not appear before the basics
+function skillOpen(k){if(k==='mul')return sk('add').level>=3;if(k==='money')return sk('add').level>=2&&sk('sub').level>=2;if(k==='frac')return sk('mul').level>=1;return true}
+// ---------- showing one math item ----------
+function optLabel(item,o){return item.labels?item.labels[o]:(item.fmt?item.fmt(o):(item.html&&/\//.test(String(o))?frac(...String(o).split('/')):o))}
+function showItem(item,meta,onDone){
+  const t0=performance.now();let hinted=false;if(window.__cq)window.__cq.answer=String(item.answer);
+  const opts=item.options.map(o=>'<button class="opt" data-v="'+esc(o)+'">'+optLabel(item,o)+'</button>').join('');
+  render('<div class="row" style="justify-content:space-between"><span class="muted">'+meta.head+'</span><button class="speak" id="sp" aria-label="Read aloud">🔊</button></div>'+(meta.bar!==undefined?'<div class="bar"><div style="width:'+meta.bar+'%"></div></div>':'')+'<p class="prompt">'+item.q+'</p><div id="vis">'+(item.show?item.visual():'')+'</div><div class="row" style="justify-content:center"><button class="btn ghost" id="show"'+(item.show?' hidden':'')+'>👀 Show me a picture</button></div><div class="opts" id="opts">'+opts+'</div><p class="feedback" id="fb"></p>');
+  $('sp').onclick=()=>speak(item.spoken);
+  if(meta.say)setTimeout(()=>speak(item.spoken),400);
+  $('show').onclick=()=>{if(item.show)return;hinted=true;$('vis').innerHTML=item.visual();$('show').hidden=true};
+  let answered=false;
+  document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    if(answered)return;answered=true;
+    const v=b.dataset.v;const ok=String(v)===String(item.answer);const secs=Math.round((performance.now()-t0)/100)/10;
+    if(ok){b.classList.add('right');const c=pick(CHEERS);$('fb').textContent=c+(secs<5&&!hinted?' ⚡':'');speak(c);coins(2)}
+    else{b.classList.add('wrong');$('fb').textContent=pick(NOTYET);speak($('fb').textContent);document.querySelectorAll('.opt').forEach(x=>{if(String(x.dataset.v)===String(item.answer))x.classList.add('right')});$('vis').innerHTML=item.visual();$('show').hidden=true}
+    onDone(ok,secs,hinted,v);
+  });
+}
+// After a miss: she does the work, then the SAME question comes back once.
+function missFlow(item,meta,after){
+  nextBtn(()=>teachScreen(item,()=>{const it=Object.assign({},item,{options:shuffle(item.options)});showItem(it,Object.assign({},meta,{head:meta.head+' · try again'}),(ok2)=>{if(ok2){coins(1)}nextBtn(after)})}),'Show me how ➜','pink');
+}
+function teachScreen(item,done){
+  const T=item.teach||{};TEACH_Q=item.q;
+  if(T.type==='on')return countOn(item,done);
+  if(T.type==='away')return takeAway(item,done);
+  if(T.type==='count')return tapCount(Object.assign({},item,{teach:{groups:T.n,per:1}}),done);
+  if(T.type==='missing')return missingAddend(item,done);
+  if(T.type==='bridge')return bridgeTen(item,done);
+  if(T.type==='ones')return takeOnes(item,done);
+  if(T.groups)return tapCount(item,done);
+  return explainScreen(item,done);
+}
+let TEACH_Q='';
+function teachShell(title,body){render((TEACH_Q?'<p class="center muted" style="font-size:1.1rem">'+TEACH_Q+'</p>':'')+'<p class="prompt small">'+title+'</p>'+body+'<p class="big" id="run" style="font-size:2.4rem">&nbsp;</p><p class="feedback" id="tfb"></p><div class="row" style="justify-content:center"><button class="btn ghost sm" id="again">🔊 Say it again</button><button class="btn good" id="go" hidden>I got it! Try the question again</button></div>')}
+function finishTeach(text,done){$('tfb').textContent=text;setTimeout(()=>speak(text,{force:true}),500);$('go').hidden=false;$('go').onclick=done}
+function explainScreen(item,done){
+  const how=item.how||item.spoken||'';
+  render('<p class="prompt small">Let\'s see how it works.</p><p class="prompt small muted">'+item.q+'</p><div id="vis">'+(item.visual?item.visual():'')+'</div><div class="parent" style="border-style:solid"><span class="tag">How to get it</span><p style="font-size:1.25rem">'+esc(how)+'</p></div><div class="row" style="justify-content:center"><button class="btn ghost" id="again">🔊 Say it again</button><button class="btn good" id="go">Got it! Try again</button></div>');
+  const say=()=>speak(how,{force:true,rate:.95});say();$('again').onclick=say;$('go').onclick=done;
+}
+function cellBtn(i,filled,cls){return '<button class="cell" data-i="'+i+'" style="width:52px;height:52px;border-radius:10px;background:var(--card);cursor:pointer">'+(filled?'<span class="dot '+(cls||'')+'"></span>':'')+'</button>'}
+function grid(id,cells,filled,cls){return '<div id="'+id+'" style="display:grid;grid-template-columns:repeat(5,52px);gap:8px;justify-content:center">'+Array.from({length:cells},(_,i)=>cellBtn(i,i<filled,cls)).join('')+'</div>'}
+function countOn(item,done){
+  const a=item.teach.start,n=item.teach.n,total=a+n;const cells=total>10?20:10;
+  teachShell('Start at <b>'+a+'</b>. Tap the empty boxes one at a time and count on. No fingers needed, the boxes do the counting.',grid('tf',cells,a));
+  $('run').textContent=a;
+  const say=()=>speak('Start at '+a+'. Tap the empty boxes and count on: '+(a+1)+', '+(a+2)+'...',{force:true});say();$('again').onclick=say;
+  let k=0;
+  document.querySelectorAll('#tf .cell').forEach(c=>c.onclick=()=>{const i=+c.dataset.i;if(i!==a+k||k>=n)return;c.innerHTML='<span class="dot b"></span>';k++;$('run').textContent=a+k;speak(String(a+k),{force:true});
+    if(k===n)finishTeach(a+' and '+n+' more is '+total+'. You counted it!',done)});
+}
+function missingAddend(item,done){
+  const a=item.teach.start,t=item.teach.target;const cells=t>10?20:10;
+  teachShell('<b>'+a+'</b> are filled. Tap empty boxes until you reach <b>'+t+'</b>. The pink dots you add are the missing number.',grid('tf',cells,a)+'<p class="center muted" id="added" style="font-size:1.2rem">Added so far: 0</p>');
+  $('run').textContent=a;
+  const say=()=>speak(a+' are filled. Tap the empty boxes and count up until you reach '+t+'. Then count the pink dots you added.',{force:true});say();$('again').onclick=say;
+  let k=0;
+  document.querySelectorAll('#tf .cell').forEach(c=>c.onclick=()=>{const i=+c.dataset.i;if(i!==a+k||a+k>=t)return;c.innerHTML='<span class="dot b"></span>';k++;$('run').textContent=a+k;$('added').textContent='Added so far: '+k;speak(String(a+k),{force:true});
+    if(a+k===t)finishTeach('You added '+k+' pink dots to get from '+a+' to '+t+'. So '+a+' plus '+k+' is '+t+'. The missing number is '+k+'.',done)});
+}
+function bridgeTen(item,done){
+  const a=item.teach.a,b=item.teach.b,need=10-a,rest=b-need;
+  render('<p class="prompt small">Make a 10 first. Tap <b>'+need+'</b> pink dots to move them into the first box.</p><div class="visual" style="gap:20px">'+grid('f1',10,a)+grid('f2',10,0)+'</div><p class="big" id="run" style="font-size:2rem">'+a+' + '+b+'</p><p class="feedback" id="tfb"></p><div class="row" style="justify-content:center"><button class="btn ghost sm" id="again">🔊 Say it again</button><button class="btn good" id="go" hidden>I got it! Try the question again</button></div>');
+  document.querySelectorAll('#f2 .cell').forEach((c,i)=>{if(i<b)c.innerHTML='<span class="dot b"></span>'});
+  const say=()=>speak(a+' needs '+need+' to make 10. Tap '+need+' pink dots to move them to the first box.',{force:true});say();$('again').onclick=say;
+  let moved=0;
+  document.querySelectorAll('#f2 .cell').forEach(c=>c.onclick=()=>{if(moved>=need||!c.innerHTML)return;c.innerHTML='';const tgt=document.querySelectorAll('#f1 .cell')[a+moved];tgt.innerHTML='<span class="dot b"></span>';moved++;speak(String(a+moved),{force:true});
+    if(moved===need){$('run').textContent='10 + '+rest;$('tfb').textContent='Now the first box is a full 10, and '+rest+' are left. 10 plus '+rest+' is '+(a+b)+'!';setTimeout(()=>speak('Now you have a full 10 and '+rest+' left over. 10 plus '+rest+' is '+(a+b)+'.',{force:true}),500);$('go').hidden=false;$('go').onclick=done}});
+}
+function takeAway(item,done){
+  const a=item.teach.total,n=item.teach.n;
+  teachShell('There are <b>'+a+'</b>. Tap <b>'+n+'</b> of them to take them away.','<div class="visual" id="ta" style="gap:10px">'+Array.from({length:a},(_,i)=>cellBtn(i,true)).join('')+'</div>');
+  $('run').textContent=a;
+  const say=()=>speak('There are '+a+'. Tap '+n+' of them to take them away.',{force:true});say();$('again').onclick=say;
+  let gone=0,phase=1,counted=0;
+  document.querySelectorAll('#ta .cell').forEach(c=>c.onclick=()=>{
+    if(phase===1){if(c.dataset.gone)return;c.dataset.gone='1';c.innerHTML='<span style="font-size:1.6rem">✖</span>';gone++;$('run').textContent=(a-gone);speak(String(a-gone),{force:true});
+      if(gone===n){phase=2;$('tfb').textContent='Now tap the ones that are left and count them.';speak('Now tap the ones that are left and count them.',{force:true});$('run').textContent='0'}}
+    else{if(c.dataset.gone||c.dataset.c)return;c.dataset.c='1';c.style.background='var(--goodbg)';counted++;$('run').textContent=counted;speak(String(counted),{force:true});
+      if(counted===a-n)finishTeach(a+' take away '+n+' leaves '+(a-n)+'. You did it!',done)}});
+}
+function takeOnes(item,done){
+  const a=item.teach.a,b=item.teach.b,t=T(a),o=O(a);
+  teachShell(a+' is <b>'+t+' tens</b> and <b>'+o+' ones</b>. We only take away ones. Tap <b>'+b+'</b> of the little squares.','<div class="visual" style="gap:24px;align-items:flex-end"><div style="display:flex;gap:6px" id="rods">'+Array.from({length:t},()=>'<span class="rod"></span>').join('')+'</div><div id="ones" style="display:grid;grid-template-columns:repeat(5,44px);gap:6px">'+Array.from({length:o},(_,i)=>'<button class="cell" data-i="'+i+'" style="width:44px;height:44px;border-radius:8px;background:var(--coin);border-color:var(--coin);cursor:pointer"></button>').join('')+'</div></div><p class="center muted" id="lbl" style="font-size:1.2rem">'+t+' tens and '+o+' ones</p>');
+  $('run').textContent=a;
+  const say=()=>speak(a+' is '+t+' tens and '+o+' ones. The sticks are tens. They stay. Tap '+b+' of the little ones to take them away.',{force:true});say();$('again').onclick=say;
+  let gone=0;
+  document.querySelectorAll('#ones .cell').forEach(c=>c.onclick=()=>{if(gone>=b||c.dataset.gone)return;c.dataset.gone='1';c.style.background='var(--card)';c.innerHTML='✖';gone++;$('run').textContent=a-gone;$('lbl').textContent=t+' tens and '+(o-gone)+' ones';speak(String(a-gone),{force:true});
+    if(gone===b)finishTeach('The '+t+' tens did not change. '+o+' ones take away '+b+' is '+(o-b)+'. '+t+' tens and '+(o-b)+' ones is '+(a-b)+'.',done)});
+}
+function tapCount(item,done){
+  const g=item.teach.groups,n=item.teach.per;let i=0;
+  const say0=n===10?'Each stick is ten. Tap the first one and say ten.':'Each group has '+n+'. Tap the first group and say '+n+'.';
+  teachShell('Let\'s count together. Tap each group, one at a time. Watch the numbers grow.','<div class="visual" id="tc" style="gap:12px">'+Array.from({length:g},(_,k)=>'<button class="opt" data-k="'+k+'" style="padding:10px;min-height:0;display:flex;flex-direction:column;align-items:center;gap:6px">'+(n===10?'<span class="rod" style="height:70px"></span>':'<div class="group">'+Array.from({length:n},()=>'<span class="dot" style="width:12px;height:12px"></span>').join('')+'</div>')+'<span class="cnt" style="font-size:1.6rem;min-height:1.2em">&nbsp;</span></button>').join('')+'</div>');
+  const say=()=>speak(say0,{force:true,rate:.95});say();$('again').onclick=say;
+  document.querySelectorAll('#tc .opt').forEach(b=>b.onclick=()=>{const k=+b.dataset.k;if(k!==i)return;b.classList.add('right');b.querySelector('.cnt').textContent=(k+1)*n;$('run').textContent=Array.from({length:k+1},(_,j)=>(j+1)*n).join(', ');speak(String((k+1)*n),{force:true});i++;
+    if(i===g)finishTeach(g+' groups of '+n+' makes '+(g*n)+'. You counted it yourself!',done)});
+}
+
+// ---------- Math Quest: today's adaptive set ----------
+function genItem(key,level){const L=SKILLS[key].levels[Math.max(0,Math.min(level,SKILLS[key].levels.length-1))];let it=null,g=0;while(!it&&g<40){g++;it=L.g()}return it}
+function mathQuest(done){
+  const N=D.settings.items||10;let i=0,right=0;const back={},wrongRun={},touched=new Set();let streak=0;
+  // Two focus skills per day (the two furthest behind, rotating on ties) get most of the questions, so a level can be mastered in one sitting.
+  const open=SKILL_ORDER.filter(skillOpen);const ratio=k=>sk(k).level/SKILLS[k].levels.length+((SKILL_ORDER.indexOf(k)+dayNum())%open.length)*0.001;
+  const focus=open.slice().sort((a,b)=>ratio(a)-ratio(b)).slice(0,2);
+  function pickSkill(){const w=open.map(k=>focus.includes(k)?3:0.6);let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let j=0;j<open.length;j++){r-=w[j];if(r<=0)return open[j]}return open[0]}
+  function next(){
+    if(i>=N)return finish();
+    let key,level,review=false;
+    if(i%4===3){for(const k of shuffle(SKILL_ORDER)){const l=dueReview(k);if(l!==null){key=k;level=l;review=true;break}}}
+    if(!key){key=pickSkill();level=Math.max(0,sk(key).level-(back[key]||0))}
+    const item=genItem(key,level);const S_=SKILLS[key];touched.add(key);
+    showItem(item,{head:S_.em+' '+S_.name+' · '+(review?'quick review':S_.levels[level].n)+' · '+(i+1)+' of '+N,bar:Math.round(100*i/N)},(ok,secs,hinted,given)=>{
+      i++;logItem('math',{key,level,ok,secs,hint:hinted,q:item.q.replace(/<[^>]+>/g,''),a:String(item.answer),given,review});
+      if(review){reviewResult(key,level,ok)}else{record(key,level,ok&&!hinted,secs<6)}
+      if(ok){right++;streak++;wrongRun[key]=0;if(!review&&advanceIfReady(key,S_.levels.length)){return nextBtn(()=>levelUp(key,next),'Next ➜')}return nextBtn(next)}
+      streak=0;wrongRun[key]=(wrongRun[key]||0)+1;
+      if(wrongRun[key]>=2&&!review&&level>0){back[key]=(back[key]||0)+1;wrongRun[key]=0;return missFlow(item,{head:S_.em+' '+S_.name},()=>stepBack(S_,next))}
+      missFlow(item,{head:S_.em+' '+S_.name},next);
+    });
+  }
+  function stepBack(S_,cont){render('<div class="stars">🪜</div><h2 class="center">Let\'s take one step back</h2><p class="center">That was a tough one. We will practice an easier one on '+S_.name+' first, then climb back up. That is how experts learn.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Okay!</button></div>');speak('Let\'s take one step back and warm up with an easier one. Then we climb again.');$('go').onclick=cont}
+  function finish(){const pct=Math.round(100*right/N);D.stars+=1;if(pct>=80)D.stars+=1;coins(10);save();
+    const lv=[...touched].map(k=>SKILLS[k].em+' level '+(sk(k).level+1)).join(' · ');
+    completeQuest('math','You answered '+right+' of '+N+' right ('+pct+'%). '+(pct>=80?'Two stars!':'One star.')+' Where you are: '+lv,done)}
+  next();
+}
+function levelUp(key,cont){const s=sk(key),S_=SKILLS[key];confetti();render('<div class="stars pop">⭐🎉⭐</div><h2 class="center">Level up on '+S_.name+'!</h2><p class="center">You mastered <b>'+S_.levels[s.level-1].n+'</b>. Next up: <b>'+S_.levels[s.level].n+'</b>.</p><p class="center muted">+5 coins</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Let\'s go!</button></div>');coins(5);speak('Level up! You mastered '+S_.levels[s.level-1].n+'. Amazing, Camila!');$('go').onclick=cont}
+
+// ---------- Brain Sparks: warm-up on things she already knows (builds fast recall) ----------
+function sparksQuest(done){
+  const N=6;let i=0,fast=0,right=0;
+  const pool=[];SKILL_ORDER.forEach(k=>sk(k).mastered.forEach(l=>pool.push([k,l])));
+  if(pool.length<2){pool.push(['numbers',0],['numbers',1],['add',0],['add',1],['sub',0],['sub',1])}
+  function next(){
+    if(i>=N)return finish();
+    const [key,level]=pick(pool);const item=genItem(key,level);const S_=SKILLS[key];
+    showItem(item,{head:'⚡ Brain Sparks · '+(i+1)+' of '+N,bar:Math.round(100*i/N)},(ok,secs,hinted,given)=>{
+      i++;logItem('sparks',{key,level,ok,secs,hint:hinted,q:item.q.replace(/<[^>]+>/g,''),a:String(item.answer),given});
+      if(sk(key).mastered.includes(level))reviewResult(key,level,ok);
+      if(ok){right++;if(secs<5&&!hinted){fast++;$('fb').textContent+=' Lightning fast!'}return nextBtn(next)}
+      missFlow(item,{head:'⚡ Brain Sparks'},next);
+    });
+  }
+  function finish(){D.stars+=1;coins(5);save();completeQuest('sparks','Brain warmed up: '+right+' of '+N+' right, '+fast+' lightning fast ⚡.',done)}
+  render('<div class="stars">⚡</div><h2 class="center">Brain Sparks</h2><p class="center">Six quick ones you already know. Try to just <b>see</b> the answer, no counting on fingers. The faster your brain gets, the easier everything else becomes.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Start</button></div>');
+  speak('Brain Sparks! Six quick ones you already know. Try to just see the answer.');$('go').onclick=next;
+}
+// ---------- Word Work: read the word you see, out loud ----------
+const WORDLV=[
+ {n:'Short vowels',tip:'Say each sound, then blend them together.',w:[['cat','cat','short a like hat',['cot','cut','cap']],['sun','sun','short u like fun',['sin','son','sum']],['hop','hop','short o like top',['hip','hot','hog']],['bed','bed','short e like red',['bad','bid','bud']],['pig','pig','short i like big',['peg','pin','big']],['map','map','short a',['mop','mat','nap']],['net','net','short e',['nut','not','men']],['lid','lid','short i',['led','lad','lip']],['box','box','short o',['bus','fox','bax']],['bug','bug','short u',['bag','big','hug']],['jam','jam','short a',['jim','gem','ham']],['wet','wet','short e',['wit','wed','vet']]]},
+ {n:'Blends and digraphs',tip:'sh, ch, th are one sound. Blends like fr and st keep both sounds.',w:[['ship','ship','sh is one sound',['shop','chip','slip']],['frog','frog','fr blend',['from','flag','fog']],['chat','chat','ch like chip',['chop','cat','that']],['spin','spin','sp blend',['span','skin','spit']],['thump','thump','th then ump',['thumb','jump','stump']],['stop','stop','st blend',['step','spot','shop']],['brush','brush','br blend, sh at the end',['brash','blush','bush']],['clock','clock','cl blend, ck at the end',['click','cloak','block']],['think','think','th then ink',['thank','thing','thick']],['whisk','whisk','wh then isk',['whisker','wish','whist']],['glass','glass','gl blend',['grass','class','gloss']],['trash','trash','tr blend, sh at the end',['trish','crash','track']]]},
+ {n:'Silent e',tip:'Silent e at the end makes the vowel say its name.',w:[['cake','cake','a says its name',['cook','make','back']],['bike','bike','i says its name',['bake','back','like']],['home','home','o says its name',['hum','hole','hose']],['cube','cube','u says its name',['cub','cute','tube']],['smile','smile','long i, silent e',['small','slime','simile']],['plane','plane','long a',['plan','plain','plant']],['stone','stone','long o',['stun','store','stove']],['shine','shine','long i',['shin','shone','shrine']],['grape','grape','long a',['grip','grasp','gripe']],['whale','whale','long a',['while','wheel','wall']],['flute','flute','long u',['flat','float','fluke']],['brave','brave','long a',['brake','bravo','grave']]]},
+ {n:'Vowel teams',tip:'Two vowels walk together: ai, ee, oa, ea, igh.',w:[['boat','boat','oa says long o',['bolt','beat','boot']],['rain','rain','ai says long a',['ran','rein','train']],['light','light','igh says long i',['lit','fight','laugh']],['tree','tree','ee says long e',['try','three','tray']],['beach','beach','ea says long e',['bench','batch','bleach']],['coat','coat','oa says long o',['cot','cat','coast']],['night','night','igh says long i',['knit','nice','neat']],['dream','dream','ea says long e',['drum','drama','cream']],['snail','snail','ai says long a',['snack','sail','snarl']],['sweet','sweet','ee says long e',['sweat','swept','sweep']],['toast','toast','oa says long o',['toss','taste','test']],['bright','bright','igh says long i',['bright','brought','bring'].map((x,i)=>i===0?'brit':x)]]},
+ {n:'Bossy r',tip:'When r follows a vowel it changes the sound: ar, or, er, ir, ur.',w:[['car','car','ar like star',['core','cur','cart']],['bird','bird','ir says er',['bard','bored','bride']],['fork','fork','or like corn',['fark','fort','frock']],['turn','turn','ur says er',['torn','tarn','true']],['farm','farm','ar',['form','firm','frame']],['storm','storm','or',['stern','strum','stem']],['girl','girl','ir says er',['grill','gull','gal']],['nurse','nurse','ur says er',['norse','nose','noise']],['garden','gar-den','ar then den',['guard','golden','harden']],['corner','cor-ner','or then er',['cornet','coroner','corn']],['hurt','hurt','ur says er',['heart','hut','hart']],['shark','shark','sh then ar',['shirk','shack','sharp']]]},
+ {n:'Two parts',tip:'Clap the two parts, then put them together.',w:[['basket','bas-ket','bas, ket',['bucket','blanket','biscuit']],['rabbit','rab-bit','rab, bit',['ribbon','robot','habit']],['picnic','pic-nic','pic, nic',['picture','panic','pickle']],['sunset','sun-set','sun, set',['sunrise','subset','sunlit']],['napkin','nap-kin','nap, kin',['pumpkin','napping','kitten']],['market','mar-ket','mar, ket',['marker','racket','magnet']],['pocket','pock-et','pock, et',['packet','rocket','picket']],['window','win-dow','win, dow',['widow','winter','willow']],['muffin','muf-fin','muf, fin',['muffle','puffin','mitten']],['customer','cus-tom-er','cus, tom, er',['custom','costume','customs']],['problem','prob-lem','prob, lem',['probably','program','emblem']],['money','mon-ey','mon, ey',['monkey','many','honey']]]},
+ {n:'Three parts',tip:'Tap each part on the table as you say it. Find the loud part.',w:[['fantastic','fan-tas-tic','loud part: TAS',['fantasy','plastic','frantic']],['remember','re-mem-ber','loud part: MEM',['member','reminder','December']],['important','im-por-tant','loud part: POR',['imported','impatient','importance']],['umbrella','um-brel-la','loud part: BREL',['umbrellas','unbuckle','Cinderella']],['yesterday','yes-ter-day','loud part: YES',['Wednesday','yesteryear','everyday']],['tomorrow','to-mor-row','loud part: MOR',['tomato','borrow','sorrow']],['beautiful','beau-ti-ful','beau sounds like byoo',['bountiful','dutiful','beauty']],['delicious','de-li-cious','cious says shus',['delirious','decision','ambitious']],['adventure','ad-ven-ture','ture says cher',['advantage','venture','adventurous']],['hamburger','ham-bur-ger','ham, bur, ger',['hamper','burger','hamster']],['customer','cus-tom-er','cus, tom, er',['custom','costume','customs']],['business','busi-ness','say BIZ-ness',['busyness','bushiness','basin']]]},
+ {n:'Word parts (un-, re-, -ful, -tion)',tip:'Find the base word, then add the beginning or ending.',w:[['unhappy','un-hap-py','un means not',['happily','unhappily','unhook']],['replay','re-play','re means again',['reply','relay','display']],['helpful','help-ful','ful means full of',['helpless','hopeful','handful']],['kindness','kind-ness','ness makes it a thing',['kinds','kingdom','blindness']],['careless','care-less','less means without',['carless','careful','cordless']],['invention','in-ven-tion','tion says shun',['intention','invitation','inventor']],['unlock','un-lock','un means not',['unlucky','unblock','relock']],['rebuild','re-build','re means again',['rebuilt','rebel','rebound']],['powerful','pow-er-ful','ful',['powerless','purposeful','powder']],['location','lo-ca-tion','tion says shun',['vacation','lotion','locate']],['preview','pre-view','pre means before',['review','previous','prevent']],['teacher','teach-er','er means a person who',['teach','teaches','teether']]]},
+ {n:'Business words',tip:'These are the words business owners use every day.',w:[['profit','prof-it','money you keep after costs',['prophet','proffer','pro fit'.replace(' ','')]],['revenue','rev-e-nue','all the money that comes in',['avenue','review','venue']],['inventory','in-ven-to-ry','the supply waiting to be sold',['invention','inventor','inventive']],['customer','cus-tom-er','a person who buys',['custom','costume','customs']],['competition','com-pe-ti-tion','other businesses selling the same thing',['completion','compilation','composition']],['advertise','ad-ver-tise','tell people about your product',['advertisement','adverse','advice']],['quality','qual-i-ty','how good something is',['quantity','equality','qualify']],['budget','budg-et','a plan for your money',['bucket','badge','budge']],['expense','ex-pense','money going out',['expand','expensive','expanse']],['investor','in-ves-tor','a person who puts money in to help a business grow',['investigator','inventor','invest']],['discount','dis-count','a lower price',['discard','discount','account'].map((x,i)=>i===1?'viscount':x)],['entrepreneur','en-tre-pre-neur','a person who starts a business',['enterprise','entertainer','interpreter']]]},
+];
+function wordsQuest(done){
+  const N=6;let i=0,right=0;const lvl=()=>sk('words').level;
+  // queue: up to 2 tricky words from stories, then words at her level (never the same word twice in a day)
+  const used=new Set(today().log.filter(l=>l.m==='words').map(l=>l.w));
+  const tricky=Object.keys(D.reading.tricky).filter(w=>D.reading.tricky[w]>0&&!used.has(w)).slice(0,2);
+  function nextWord(){const L=WORDLV[Math.min(lvl(),WORDLV.length-1)];const fresh=L.w.filter(x=>!used.has(x[0]));return pick(fresh.length?fresh:L.w)}
+  function next(){
+    if(i>=N)return finish();
+    let entry,fromStory=false;
+    if(tricky.length){const w=tricky.shift();entry=WORDLV.flatMap(l=>l.w).find(x=>x[0]===w)||[w,w,'a word from your story',[]];fromStory=true}
+    else entry=nextWord();
+    used.add(entry[0]);const [w,syl,tip,dis]=entry;const L=WORDLV[Math.min(lvl(),WORDLV.length-1)];
+    readWord(w,syl,tip,dis,{head:'🔤 Word Work · '+(fromStory?'from your story':L.n)+' · '+(i+1)+' of '+N,bar:Math.round(100*i/N)},(ok,mode,heard)=>{
+      i++;logItem('words',{w,ok,mode,heard,level:lvl(),fromStory});
+      if(fromStory){if(ok)D.reading.tricky[w]=Math.max(0,(D.reading.tricky[w]||1)-1)}else record('words',lvl(),ok,true);
+      if(ok){right++;coins(2)}
+      if(!fromStory&&advanceIfReady('words',WORDLV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">📚⭐</div><h2 class="center">Reading level up!</h2><p class="center">You mastered <b>'+WORDLV[lvl()-1].n+'</b>. Next: <b>'+WORDLV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');speak('Reading level up! You mastered '+WORDLV[lvl()-1].n+'.');coins(5);$('go').onclick=next})}
+      nextBtn(next);
+    });
+  }
+  function finish(){D.stars+=1;coins(8);save();completeQuest('words','You read '+right+' of '+N+' words out loud. Level: '+WORDLV[Math.min(lvl(),WORDLV.length-1)].n+'.',done)}
+  micIntro('Word Work','I will show you a word. You read it out loud, and I listen. If it is tricky, I will show you the parts and we say it together.',next);
+}
+// one word: she reads it; the mic checks; tricky → parts → say it together → try again
+function readWord(w,syl,tip,dis,meta,cb){
+  let tries=0;
+  function screen1(){
+    render('<div class="row" style="justify-content:space-between"><span class="muted">'+meta.head+'</span></div><div class="bar"><div style="width:'+meta.bar+'%"></div></div><p class="prompt small muted">Read this word out loud. Tap <b>My turn</b>, then say it.</p><p class="prompt word" id="theword">'+w+'</p><p class="center muted" id="parts" style="font-size:1.3rem;min-height:1.5em"></p><div class="row" style="justify-content:center"><button class="btn pink" id="say" style="font-size:1.5rem">🎙️ My turn</button><button class="btn ghost sm" id="help">🧩 Help me</button></div><p class="feedback" id="fb"></p><div id="extra"></div>');
+    if(tries===0&&meta.firstSpeak!==false)speak('Read this word out loud. Tap My turn, then say it.',{force:true});
+    $('help').onclick=()=>helpScreen(false);
+    $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening… say it now';const r=await listen(4500);{const sb=$('say');if(sb)sb.disabled=false};
+      if(r.err&&MIC==='no')return noMicFlow();
+      if(r.err){$('fb').textContent='I did not catch it. Tap My turn and say it a little louder.';return}
+      const ok=wordMatch(w,r.text,r.alts).every(x=>x.ok);
+      if(ok){$('fb').textContent=pick(CHEERS)+' I heard "'+r.text+'".';speak(pick(CHEERS));cb(true,'mic',r.text);return}
+      tries++;$('fb').textContent='I heard "'+r.text+'". Not quite. Let\'s break it into parts.';speak('I heard '+r.text+'. Not quite. Let\'s break it into parts.',{force:true});
+      setTimeout(()=>helpScreen(true),1600);
+    };
+  }
+  function helpScreen(afterMiss){
+    const parts=syl.split('-');
+    render('<div class="row" style="justify-content:space-between"><span class="muted">'+meta.head+'</span></div><p class="prompt small">Tap each part and say it. Then say the whole word.</p><div class="row" style="justify-content:center;gap:10px" id="parts">'+parts.map((p,k)=>'<button class="opt" data-k="'+k+'" style="font-size:2rem;padding:16px 22px;min-height:0">'+p+'</button>').join('')+'</div><p class="center muted" style="font-size:1.1rem">'+esc(tip)+'</p><div class="row" style="justify-content:center"><button class="btn ghost" id="whole">🔊 Hear the whole word</button></div><p class="feedback" id="fb"></p><div class="row" style="justify-content:center"><button class="btn pink" id="back" hidden style="font-size:1.4rem">🎙️ Now I read it</button></div>');
+    let k=0;const partBtns=[...document.querySelectorAll('#parts .opt')];
+    const sayPart=(idx)=>speak(parts[idx],{force:true,rate:.75});
+    partBtns.forEach(b=>b.onclick=()=>{const j=+b.dataset.k;sayPart(j);b.classList.add('right');if(j===k)k++;if(k>=parts.length){$('back').hidden=false;$('fb').textContent='Now put it together: '+w}});
+    $('whole').onclick=()=>speak(w,{force:true,rate:.8});
+    speak(parts.length>1?'Tap each part and say it with me.':'Listen: '+w+'. Now tap it and say it.',{force:true});
+    $('back').onclick=()=>{if(tries>=2){return cb(false,'mic')}screen1Retry()};
+    if(parts.length===1){$('back').hidden=false}
+  }
+  function screen1Retry(){
+    render('<div class="row" style="justify-content:space-between"><span class="muted">'+meta.head+' · try again</span></div><p class="prompt small muted">Say the whole word. Tap <b>My turn</b>.</p><p class="prompt word">'+w+'</p><p class="center muted" style="font-size:1.3rem">'+syl.split('-').join(' · ')+'</p><div class="row" style="justify-content:center"><button class="btn ghost" id="hear">🔊 Hear it</button><button class="btn pink" id="say" style="font-size:1.5rem">🎙️ My turn</button></div><p class="feedback" id="fb"></p>');
+    $('hear').onclick=()=>speak(w,{force:true,rate:.8});
+    $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening…';const r=await listen(4500);{const sb=$('say');if(sb)sb.disabled=false};
+      if(r.err&&MIC==='no')return noMicFlow();
+      if(r.err){$('fb').textContent='I did not catch it. Try once more, nice and loud.';return}
+      const ok=wordMatch(w,r.text,r.alts).every(x=>x.ok);
+      if(ok){$('fb').textContent='Yes! That is '+w+'!';speak('Yes! That is '+w+'! You fixed it!');cb(true,'mic',r.text);return}
+      tries++;if(tries>=3){$('fb').textContent='Good effort. The word is '+w+'. We will see it again another day.';speak('Good effort. The word is '+w+'. We will see it again another day.',{force:true,rate:.9});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();cb(false,'mic',r.text);return}
+      $('fb').textContent='I heard "'+r.text+'". Listen once more, then say it.';speak(w,{force:true,rate:.75});
+    };
+  }
+  // no microphone: listen and tap the word you hear, then say it 3 times
+  function noMicFlow(){
+    const opts=shuffle([w].concat((dis||[]).slice(0,3)));while(opts.length<4)opts.push(w+'s');
+    render('<div class="row" style="justify-content:space-between"><span class="muted">'+meta.head+'</span></div><p class="prompt small">No microphone here, so: listen, then tap the word you hear.</p><div class="row" style="justify-content:center"><button class="btn pink" id="hear">🔊 Hear the word</button></div><div class="opts">'+opts.map(o=>'<button class="opt" style="font-size:1.7rem" data-v="'+esc(o)+'">'+o+'</button>').join('')+'</div><p class="feedback" id="fb"></p>');
+    const say=()=>speak(w,{force:true,rate:.85});$('hear').onclick=say;setTimeout(say,500);
+    let answered=false;
+    document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(answered)return;answered=true;const ok=b.dataset.v===w;
+      if(ok){b.classList.add('right');$('fb').textContent='You found it! Now say it out loud 3 times: '+w;speak('You found it! Say it three times. '+w+'. '+w+'. '+w+'.',{force:true,rate:.85});nextBtn(()=>cb(true,'tap'),'I said it! Next')}
+      else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'": '+syl.split('-').join(' · ');speak('The word was '+w+'. '+syl.split('-').join(', ')+'. '+w+'. Say it with me.',{force:true,rate:.8});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();nextBtn(()=>cb(false,'tap'))}});
+  }
+  screen1();
+}
+// microphone warm-up screen (asks permission once per visit)
+function micIntro(title,text,next){
+  pauseMusicGate(()=>{
+    render('<div class="stars">🎙️</div><h2 class="center">'+title+'</h2><p class="center">'+text+'</p>'+(MIC==='yes'?'':'<p class="center muted">First, tap the button and say <b>hello</b> so the microphone wakes up. If your iPad asks, tap <b>Allow</b>.</p>')+'<div class="row" style="justify-content:center">'+(MIC==='yes'?'<button class="btn good" id="go">Start</button>':'<button class="btn pink" id="mic" style="font-size:1.4rem">🎙️ Say hello</button><button class="btn ghost sm" id="skip">No microphone today</button>')+'</div><p class="feedback" id="fb"></p>');
+    speak(text,{force:true});
+    let started=false;const go=()=>{if(started)return;started=true;next()};
+    if($('go'))$('go').onclick=go;
+    if($('mic'))$('mic').onclick=async()=>{if(started||!$('mic'))return;$('mic').disabled=true;$('fb').textContent='Listening…';const r=await listen(5000);if(!$('mic'))return;$('mic').disabled=false;
+      if(r.text){MIC='yes';$('fb').textContent='I heard "'+r.text+'". Your microphone works!';speak('I heard you! Your microphone works. Let\'s go!');$('mic').hidden=true;$('skip').hidden=true;nextBtn(go,'Start')}
+      else if(MIC==='no'){$('fb').textContent='The microphone is not available here. You will listen and tap instead.';$('mic').hidden=true;$('skip').hidden=true;nextBtn(go,'Okay, start')}
+      else{$('fb').textContent='I did not hear anything. Tap and say hello a little louder.'}};
+    if($('skip'))$('skip').onclick=()=>{if(started)return;MIC='no';go()};
+  });
+}
+// ---------- Story Time: original stories that teach real business ideas ----------
+// level 0..4 ≈ grade 2..6. Each: concept word + meaning, text, 3 questions (answer first), 3 events in order, retell keywords.
+const STORIES=[
+ // level 0
+ {lv:0,title:'Camila and the Red Door',concept:'customer',meaning:'a person who buys what you sell',text:'Camila has a box of muffins. She walks to the big red door and knocks. A man opens it. "Would you like a muffin?" she asks with a smile. The man buys two muffins. He gives her four dollars. The man is a customer. A customer is a person who buys what you sell. Camila says thank you. She puts the money in her bag. She has nine muffins left. She walks to the next house and knocks again.',
+  qs:[['What is a customer?','A person who buys what you sell','A kind of muffin','A big red door','A bag for money'],['How many muffins did the man buy?','2','4','9','1'],['What did Camila do after she got the money?','Walked to the next house','Went home','Ate a muffin','Sat down']],order:['Camila knocks on the red door','The man buys two muffins','Camila walks to the next house'],keys:['muffin','door','man','customer','dollars','next','house']},
+ {lv:0,title:'The Price Tag',concept:'price',meaning:'how much one thing costs to buy',text:'Leo sells cold water at the park. He writes a sign: Water, one dollar. That is the price. A price is how much one thing costs to buy. A boy runs up, hot and tired. He gives Leo one dollar and gets one bottle. A mom buys three bottles. She pays three dollars. Leo counts his money at the end of the day. He has twelve dollars. Twelve people were thirsty today. Leo smiles. Tomorrow he will bring more ice.',
+  qs:[['What is a price?','How much one thing costs','A kind of sign','A bottle of water','A park'],['How much did the mom pay for three bottles?','$3','$1','$12','$6'],['Why will Leo bring more ice tomorrow?','People want cold water','Ice is free','He likes ice','It will snow']],order:['Leo writes the price on a sign','A mom buys three bottles','Leo counts twelve dollars'],keys:['water','park','sign','dollar','price','bottle','ice','twelve']},
+ {lv:0,title:'Zoe\'s Dog Walks',concept:'service',meaning:'work you do for someone, instead of a thing you sell',text:'Zoe loves dogs. Her neighbor Mr. Diaz has a dog named Pepper. He is too busy to walk her. Zoe has an idea. "I will walk Pepper for two dollars," she says. Mr. Diaz says yes. Zoe is not selling a thing. She is selling a service. A service is work you do for someone. Zoe walks Pepper every day after school. Pepper is happy. Mr. Diaz is happy. Soon three more neighbors ask Zoe to walk their dogs. Zoe makes a list so she does not forget anyone.',
+  qs:[['What is a service?','Work you do for someone','A dog named Pepper','A list of names','Two dollars'],['Why did Mr. Diaz need help?','He was too busy to walk Pepper','He did not like dogs','He was sick','He moved away'],['Why did Zoe make a list?','So she would not forget any dog','To sell it','For homework','To count money']],order:['Zoe offers to walk Pepper','Zoe walks Pepper every day','Three more neighbors ask for help'],keys:['dog','walk','pepper','neighbor','service','dollars','list','school']},
+ {lv:0,title:'Max Counts His Cost',concept:'cost',meaning:'the money you spend to make or get what you sell',text:'Max wants to sell cookies. First he buys flour, sugar, eggs, and chocolate chips. He spends six dollars. That is his cost. The cost is the money you spend to make what you sell. Max bakes twelve cookies. He sells each cookie for one dollar. At the end he has twelve dollars in his jar. But six of those dollars pay back his cost. So Max really made six dollars. "Next time I will buy on sale," he says. "Then my cost will be smaller."',
+  qs:[['What is the cost?','The money you spend to make what you sell','The money in the jar','One cookie','A chocolate chip'],['How much did Max spend on ingredients?','$6','$12','$1','$18'],['How can Max make his cost smaller?','Buy ingredients on sale','Bake fewer cookies','Sell for less','Eat the cookies']],order:['Max buys flour, sugar, and eggs','Max bakes twelve cookies','Max counts twelve dollars in his jar'],keys:['cookies','flour','sugar','six','dollars','cost','jar','sale']},
+ // level 1
+ {lv:1,title:'The Muffin Route',concept:'profit',meaning:'the money left after you pay your cost',text:'Every Saturday, Camila packs her wagon with muffins. She bought them at the store for one dollar each. That is her cost. She sells each one for two dollars. All the money customers pay her is called revenue. The money left after she pays her cost is called profit. If she sells ten muffins, her revenue is twenty dollars, her cost is ten dollars, and her profit is ten dollars. Camila started with twenty-five dollars. After one month of walking her route, her profit grew to more than two hundred dollars. Her secret was simple: she showed up every Saturday, even when it was cold, and she was always friendly.',
+  qs:[['What is profit?','The money left after paying the cost','The price of a muffin','All the money customers pay','The money she spends at the store'],['If she sells 10 muffins for $2 each, what is her revenue?','$20','$10','$2','$25'],['What was Camila\'s secret?','She showed up every Saturday and was friendly','She had the cheapest muffins','She had a big sign','She sold only in summer']],order:['Camila buys muffins for one dollar each','She sells them for two dollars each','Her profit grows to more than two hundred dollars'],keys:['saturday','wagon','muffins','cost','revenue','profit','friendly','cold']},
+ {lv:1,title:'Two Stands on Pine Street',concept:'competition',meaning:'when two businesses sell the same thing to the same customers',text:'Two kids on Pine Street opened lemonade stands on the same hot Saturday. Jordan set up first, put out a sign that said one dollar, and waited. Across the street, Tasha asked every customer one question: "What would make this better?" One said colder. One said smaller cups for little kids. One said a cookie to go with it. By noon Tasha had a cooler of ice, two cup sizes, and a plate of cookies. When two businesses sell the same thing to the same customers, that is called competition. Competition is not about yelling louder. It is about listening better. By the end of the day, Tasha had sold out and Jordan had a full pitcher. On Sunday, Jordan walked over and asked Tasha for advice. She told him everything. That is how good competitors become friends.',
+  qs:[['What is competition?','Two businesses selling the same thing to the same customers','A race on Pine Street','A kind of lemonade','Yelling louder than the other stand'],['Why did Tasha sell out?','She listened to customers and changed things','Her lemonade was cheaper','She started first','She had a bigger sign'],['What did Jordan do on Sunday?','Asked Tasha for advice','Closed his stand forever','Made his lemonade free','Moved to another street']],order:['Jordan sets up his stand first','Tasha asks customers what would make it better','Jordan asks Tasha for advice'],keys:['lemonade','jordan','tasha','customer','ice','cookies','competition','advice']},
+ {lv:1,title:'Bee Sweet',concept:'giving back',meaning:'using some of your profit to help a cause you care about',text:'This is a true story. When Mikaila Ulmer was four, a bee stung her twice in one week. Instead of staying scared, she got curious. She learned that bees were disappearing, and that without bees, many plants cannot grow food. Her great-grandmother had an old recipe for lemonade sweetened with honey. Mikaila started selling it at a stand in Austin, Texas, and called her company Me and the Bees. She decided to give part of her profit to groups that protect bees. That is called giving back. Years later, her lemonade was sold in big grocery stores, and she went on television to find people who would invest in her company. She started with one small stand, one old recipe, and one good reason.',
+  qs:[['What does giving back mean?','Using some profit to help a cause','Returning lemonade to the store','Paying back a loan','Giving refunds'],['Why did Mikaila care about bees?','Bees help plants grow food and were disappearing','Bees are yellow','Her teacher told her to','Bees make lemonade'],['What was special about her lemonade?','It was sweetened with honey','It was blue','It was free','It came in a can']],order:['A bee stings Mikaila twice','She sells honey lemonade at a stand','Her lemonade is sold in big grocery stores'],keys:['bee','stung','honey','lemonade','recipe','texas','profit','stores']},
+ {lv:1,title:'The Snack Machine',concept:'inventory',meaning:'the supply of things you have waiting to be sold',text:'Vending machines are a quiet business. Once a machine sits in a good spot, like a gym or an office lobby, it sells snacks all day without anyone standing next to it. The owner visits once or twice a week to restock the inventory. Inventory is the supply of snacks waiting inside the machine to be sold. If a machine runs out of pretzels, customers who wanted pretzels walk away, and that is a lost sale. If the machine has too many of a snack nobody buys, that money is stuck inside. Smart owners keep a notebook. They write down what sells fastest and what sits. Then they fill the machine with more of what people actually want.',
+  qs:[['What is inventory?','The supply of things waiting to be sold','The price of a snack','A kind of machine','The owner of the machine'],['What happens when the machine runs out of pretzels?','Customers walk away, a lost sale','The machine breaks','Customers buy two chips','Nothing'],['Why do owners keep a notebook?','To track what sells fast and what sits','To draw pictures','For school','To count the days']],order:['The owner puts a machine in a busy spot','Customers buy snacks all day','The owner restocks the inventory'],keys:['machine','snacks','gym','inventory','pretzels','notebook','sells','restock']},
+ // level 2
+ {lv:2,title:'Mo\'s Bow Ties',concept:'brand',meaning:'the name and look that makes people remember your business',text:'This is a true story. Moziah Bridges liked to dress sharp, but he could not find bow ties he liked. So when he was nine, his grandmother taught him to sew, and he started making his own from bright scraps of fabric. He called his company Mo\'s Bows. Friends noticed. Then strangers noticed. Moziah learned that a brand is the name and the look that make people remember you. His brand was colorful, polite, and proud, and every tie came with a little card signed by Mo himself. He sold his bow ties online and in small shops in Memphis, Tennessee. Later he appeared on a television show where business owners ask investors for money. He walked away with something better than a check: a mentor who gave him advice for years. By the time he was a teenager, Mo\'s Bows had sold hundreds of thousands of dollars of bow ties.',
+  qs:[['What is a brand?','The name and look that make people remember your business','A kind of bow tie','A television show','A sewing machine'],['Who taught Moziah to sew?','His grandmother','His teacher','An investor','A shop owner'],['What did Moziah get from the television show?','A mentor who gave him advice','A new house','A car','Nothing']],order:['Moziah cannot find bow ties he likes','His grandmother teaches him to sew','He appears on a television show'],keys:['bow','ties','grandmother','sew','brand','memphis','television','mentor']},
+ {lv:2,title:'Location, Location',concept:'location',meaning:'where your business is; a busy spot brings more customers',text:'Priya and her brother Dev built a smoothie cart out of an old wagon and a cooler. On Monday they parked it at the end of their quiet street. They sold two smoothies all afternoon. On Tuesday, Dev had an idea. "The soccer fields are packed after practice, and everybody is hot and thirsty." They pulled the cart to the fields. They sold out in forty minutes. Same cart, same smoothies, same price. The only thing that changed was the location. Location means where your business is. A busy spot with the right customers can matter more than almost anything else. On Wednesday they asked the coach if they could come back every practice. He said yes, as long as they picked up every cup. They did.',
+  qs:[['What changed between Monday and Tuesday?','The location','The price','The smoothies','The weather'],['Why were the soccer fields a good location?','Lots of hot, thirsty people were there','It was quiet','It was close to home','There was shade'],['What did the coach ask them to do?','Pick up every cup','Pay him money','Give free smoothies','Leave']],order:['They sell two smoothies on a quiet street','They move the cart to the soccer fields','They ask the coach to come back'],keys:['smoothie','cart','wagon','street','soccer','fields','location','coach','cups']},
+ {lv:2,title:'The Car Wash Team',concept:'teamwork',meaning:'splitting the work so each person does what they do best',text:'Six friends wanted to raise money for a class trip, so they planned a car wash. At first everybody did everything, and it was a mess. Buckets tipped over. Two people dried the same car while another car sat dripping. Then Amara stopped the group. "Let\'s each take one job." Ben waved cars in with a sign. Lucy sprayed. Two friends soaped. Amara and Jonah dried. Suddenly cars moved through like a train. That is teamwork: splitting the work so each person does the part they do best. They washed thirty-one cars at five dollars each. At the end, Amara counted the money twice, because a good business always counts twice. One hundred fifty-five dollars. The trip was on.',
+  qs:[['What is teamwork, in this story?','Splitting the work so each person does one job','Everybody doing everything','Washing cars alone','Counting money'],['Why was the car wash a mess at first?','Everybody did everything at once','It rained','They had no soap','Nobody came'],['Why did Amara count the money twice?','A good business always counts twice','She forgot the first number','Ben told her to','She was bored']],order:['Everyone does every job and it is a mess','Amara gives each person one job','They count one hundred fifty-five dollars'],keys:['car','wash','friends','trip','job','teamwork','soap','dried','dollars','counted']},
+ {lv:2,title:'Nadia Saves Up',concept:'saving',meaning:'keeping part of your money instead of spending it, so it is there when you need it',text:'Nadia braided hair for the girls on her block, four dollars a braid. Every Friday she had about twenty dollars. The first month she spent all of it on candy and stickers. By Thursday she always had nothing. Her aunt gave her three jars. "Spend, Save, and Grow." Each Friday, Nadia put ten dollars in Spend, six in Save, and four in Grow. Saving means keeping part of your money instead of spending it, so it is there when you need it. Two months later, her favorite hair clips broke. She did not have to ask anyone. She opened the Save jar. And the Grow jar? That one bought new ribbons and beads, so she could charge more for fancy braids. Her business got bigger because she did not spend everything.',
+  qs:[['What does saving mean?','Keeping part of your money so it is there when you need it','Spending money on candy','Braiding hair','Asking for money'],['What was the Grow jar for?','Buying things that help the business grow','Candy','Clips','Nothing'],['Why did Nadia not have to ask anyone when her clips broke?','She had money in her Save jar','Her aunt bought new ones','She stopped braiding','She found money']],order:['Nadia spends all her money on candy','Her aunt gives her three jars','The Grow jar buys ribbons and beads'],keys:['braid','hair','dollars','jars','spend','save','grow','aunt','ribbons','clips']},
+ // level 3
+ {lv:3,title:'Cory\'s Cookies',concept:'goal',meaning:'something specific you are working toward, with a plan to get there',text:'This is a true story. When Cory Nieves was six years old, he was tired of taking the bus in Englewood, New Jersey. He told his mom he wanted to buy her a car. That was his goal: something specific he was working toward. A goal without a plan is just a wish, so Cory made a plan. He started by selling hot cocoa on cold days. Then he and his mom worked on a cookie recipe, testing batch after batch until the chocolate chip cookie was exactly right. He named the business Mr. Cory\'s Cookies and wore a bow tie and a suit when he sold them, because he wanted customers to know he took his work seriously. Orders grew from neighbors to parties to stores. Cory learned that a big goal is really a line of small goals: a good recipe, a first customer, a first store, a first hundred boxes. One at a time.',
+  qs:[['What is a goal?','Something specific you work toward with a plan','A kind of cookie','A bus ride','A bow tie'],['Why did Cory wear a suit and bow tie?','To show customers he took his work seriously','It was cold','His mom made him','For a party'],['What did Cory learn about big goals?','A big goal is a line of small goals','Big goals are impossible','You need a car first','Wishes come true']],order:['Cory decides he wants to buy his mom a car','He sells hot cocoa on cold days','He perfects his chocolate chip cookie recipe'],keys:['cookies','cocoa','mom','car','goal','plan','recipe','bow','tie','store']},
+ {lv:3,title:'The Ad on the Fence',concept:'advertising',meaning:'telling people about your product so they know it exists and want it',text:'Sam\'s lawn-mowing business had a problem that had nothing to do with grass. Sam was good at mowing. Nobody knew. He had two customers, both relatives. His cousin Rosa, who was in high school, asked him one question: "How would a stranger ever find out about you?" Sam had no answer. Together they made twenty bright yellow flyers with a photo of a freshly mowed lawn and three words: Neat. Fast. Ten dollars. They put them on fences and in mailboxes along four streets. That is advertising: telling people about your product so they know it exists and want it. Within a week Sam had nine customers. Then Rosa taught him the second lesson. "An ad gets you the first job. Doing great work gets you the second." Sam mowed straight lines, swept the sidewalk, and said thank you. By summer\'s end he had a waiting list.',
+  qs:[['What is advertising?','Telling people about your product so they know it exists','Mowing lawns','Asking relatives for money','Sweeping sidewalks'],['What was Sam\'s problem?','Nobody knew about his business','He was bad at mowing','He had too many customers','His mower broke'],['What gets you the second job?','Doing great work','A second flyer','Lower prices','A bigger sign']],order:['Sam has only two customers, both relatives','Sam and Rosa put up yellow flyers','Sam has a waiting list by the end of summer'],keys:['mowing','lawn','flyers','yellow','advertising','customers','rosa','work','waiting','list']},
+ {lv:3,title:'Supply and Demand at the Fair',concept:'supply and demand',meaning:'when many people want something and there is little of it, the price goes up; when few want it, the price goes down',text:'At the county fair, Elena sold hand-painted fans. On the first morning, it was cool and cloudy. Nobody wanted a fan. She dropped the price to two dollars and still sold only three. By two o\'clock the sun came out and the fairground turned into an oven. Suddenly there was a line at her table. Elena had only twenty fans left. She raised the price to five dollars, and the line did not get any shorter. This is supply and demand. Supply is how much of something there is. Demand is how many people want it. When demand is high and supply is low, the price can go up. When demand is low, the price goes down. Elena sold out by four. That night she painted thirty more fans, and she also checked the weather for the next day.',
+  qs:[['What is demand?','How many people want something','How many fans Elena has','The price of a fan','The weather'],['Why could Elena raise the price in the afternoon?','Many people wanted fans and she had few left','It was cloudy','She had too many fans','Her paint was expensive'],['What did Elena do that night?','Painted more fans and checked the weather','Went to sleep early','Lowered her price','Closed her business']],order:['Nobody wants fans on the cool morning','The sun comes out and a line forms','Elena sells out and paints more that night'],keys:['fair','fans','painted','cloudy','sun','line','price','supply','demand','weather']},
+ {lv:3,title:'Quality Over Quick',concept:'quality',meaning:'how well something is made; good quality brings customers back',text:'Two cousins made friendship bracelets to sell at school. Kenji made his fast, ten a day, with loose knots. Mina made four a day, pulling each knot tight and checking the pattern. The first week, Kenji sold more. The second week, kids came back to Kenji with broken bracelets and asked for their money back. Nobody came back to Mina, except to buy another one for a friend. Quality means how well something is made. Good quality costs more time at the start, but it brings customers back and sends new ones to you. Kenji did not give up. He asked Mina to show him her knot. He slowed down to six bracelets a day. Not one came back broken. By the end of the month, the cousins had merged into one business with a simple promise written on their sign: Made to last.',
+  qs:[['What is quality?','How well something is made','How fast something is made','How much something costs','A kind of knot'],['Why did kids come back to Kenji?','Their bracelets broke and they wanted money back','To buy more','To say thank you','To learn knots'],['What did Kenji do after the second week?','Asked Mina to teach him and slowed down','Quit','Made bracelets even faster','Lowered his price']],order:['Kenji makes ten loose bracelets a day','Kids return with broken bracelets','The cousins merge into one business'],keys:['bracelets','kenji','mina','knots','broken','quality','slow','promise','last','cousins']},
+ // level 4
+ {lv:4,title:'Zollipops',concept:'problem solving',meaning:'finding a need that people have and making something that fixes it',text:'This is a true story. Alina Morse was seven years old when a bank teller offered her a lollipop. Her dad reminded her that sugar is bad for teeth, and Alina asked a question most people never ask: why can\'t somebody make a lollipop that is actually good for your teeth? She and her dad spent almost two years researching sweeteners that dentists approve of, testing recipes, and tasting a lot of bad candy. In 2014 she launched Zollipops, sugar-free lollipops that help clean teeth after a meal. The business grew into stores across the country, and Alina used part of her profit to give away candy and teach kids about brushing. Her story shows the first rule of starting a business: find a real problem that real people have, then build the thing that fixes it. The idea does not have to be fancy. It has to be useful.',
+  qs:[['What is the first rule of starting a business, according to the story?','Find a real problem and build the thing that fixes it','Make the fanciest product','Start when you are seven','Sell candy'],['What problem did Alina notice?','Lollipops are bad for teeth','Banks are boring','Candy was too expensive','Dentists are scary'],['How long did she research before launching?','Almost two years','One week','Ten years','One day']],order:['A bank teller offers Alina a lollipop','She researches sweeteners with her dad','She launches Zollipops in stores'],keys:['lollipop','teeth','sugar','dad','research','dentists','zollipops','stores','problem','useful']},
+ {lv:4,title:'The Loan',concept:'loan and interest',meaning:'borrowed money you must pay back, plus a little extra called interest',text:'Darius wanted to sell custom phone cases at the holiday market, but the blank cases and the printer ink cost eighty dollars, and he had thirty. His older sister offered a deal. "I will lend you fifty dollars. You pay me back fifty-five after the market." Darius hesitated. "Why fifty-five?" "The extra five is interest," she said. "It is the price of using my money instead of yours. And it is a reminder to make a plan to pay it back." A loan is borrowed money that you must pay back, and interest is the extra you pay for borrowing it. Darius did the math before he said yes. If he sold forty cases at six dollars, that was two hundred forty dollars of revenue. Minus eighty for supplies, minus fifty-five for his sister, he would keep one hundred five. He said yes, sold forty-three cases, and paid his sister first, before he spent a dollar on himself. She told him that is what every good borrower does.',
+  qs:[['What is interest?','The extra you pay for borrowing money','The price of a phone case','Money you keep','A kind of printer'],['Why did Darius do the math before saying yes?','To make sure he could pay the loan back and still keep money','To impress his sister','For homework','He did not do the math'],['What did Darius do first after the market?','Paid his sister back','Bought himself a gift','Bought more cases','Went on vacation']],order:['Darius needs eighty dollars and has thirty','His sister lends him fifty with five dollars interest','Darius sells forty-three cases and pays her back first'],keys:['phone','cases','market','sister','loan','interest','fifty','math','revenue','paid']},
+ {lv:4,title:'Reinvest',concept:'reinvesting',meaning:'putting profit back into the business so it can grow',text:'After her first summer, Jun\'s bubble tea cart had earned three hundred dollars of profit. Her friends told her to buy the sneakers she had wanted all year. Jun almost did. Then she wrote two lists. On the left: what she would have after buying the sneakers. Sneakers, and a cart that still could not keep drinks cold enough on hot days. On the right: what she would have if she spent the money on a real cooler and a second blender. No sneakers yet, but a cart that could serve twice as many customers twice as fast. She chose the right side. That is reinvesting: putting profit back into the business so it can grow. Her second summer she earned nine hundred dollars. She bought the sneakers in September, paid for by a business that was three times bigger because she had waited. Patience, she decided, was the best tool on the cart.',
+  qs:[['What is reinvesting?','Putting profit back into the business so it can grow','Buying sneakers','Making two lists','Working a second summer'],['What did Jun buy with her first profit?','A real cooler and a second blender','Sneakers','A new cart','Nothing'],['Why did she earn more the second summer?','Her cart could serve more customers faster','It was hotter','Her friends helped','She raised prices']],order:['Jun earns three hundred dollars of profit','She buys a cooler and a blender instead of sneakers','She earns nine hundred dollars the next summer'],keys:['bubble','tea','cart','profit','sneakers','cooler','blender','reinvest','summer','patience']},
+ {lv:4,title:'The Budget Meeting',concept:'budget',meaning:'a plan for how much money comes in and how much goes out',text:'The three founders of Pop and Lock Popcorn met at the kitchen table every Sunday night for what they called the budget meeting. Omar brought the notebook. Keisha brought the money box. Theo brought the calculator and, usually, snacks. A budget is a plan for how much money comes in and how much goes out, written down before you spend it. They listed what they expected to earn that week at the farmers market: about one hundred twenty dollars. Then they listed costs: kernels, butter, bags, salt, and the table fee, about fifty-five dollars. That left about sixty-five dollars. They decided in advance how to use it: twenty each in pay, and five into the Fix-It fund for when the popper finally broke. When the popper did break in October, nobody panicked. The Fix-It fund had ninety dollars in it. A budget, Omar said, is how a business stops being surprised by its own money.',
+  qs:[['What is a budget?','A written plan for money coming in and going out','A money box','A popcorn machine','A Sunday snack'],['Why did nobody panic when the popper broke?','They had saved a Fix-It fund in their budget','It was cheap','Theo fixed it','They closed the business'],['What did the founders do every Sunday?','Met to plan the week\'s money','Sold popcorn','Bought a new popper','Went to the market']],order:['The founders meet at the kitchen table','They plan costs, pay, and a Fix-It fund','The popper breaks and the fund pays for it'],keys:['popcorn','budget','sunday','notebook','market','costs','fund','popper','broke','plan']},
+];
+function pickStory(){const lv=Math.max(0,Math.min(4,D.reading.level));let pool=STORIES.filter(s=>s.lv===lv&&!D.reading.used.includes(s.title));if(!pool.length){D.reading.used=D.reading.used.filter(t=>!STORIES.find(s=>s.title===t&&s.lv===lv));pool=STORIES.filter(s=>s.lv===lv)}return pick(pool)}
+const sentences=t=>t.match(/[^.!?"]+[.!?"]+["']?\s*|[^.!?"]+$/g).map(s=>s.trim()).filter(Boolean).reduce((acc,s)=>{if(acc.length&&(s.length<18||/^["']/.test(s)))acc[acc.length-1]+=' '+s;else acc.push(s);return acc},[]);
+
+function storyQuest(done){
+  const ST=pickStory();const sents=sentences(ST.text);const res={title:ST.title,lv:ST.lv,date:todayKey(),words:ST.text.split(/\s+/).length,checked:0,missed:[],comp:0,order:false,retell:null,mode:'mic'};
+  function intro(){
+    render('<div class="stars">📖</div><h2 class="center">'+ST.title+'</h2><div class="box gold"><span class="tag" style="color:var(--coin);font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:.9rem">Today\'s business word</span><p class="prompt small" style="text-align:left"><b>'+ST.concept+'</b></p><p style="font-size:1.2rem">'+ST.meaning+'</p></div><p class="center muted">You will read the story out loud one line at a time. I listen. Then three questions, put it in order, and tell it back.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Start the story</button></div>');
+    speak('Story time! '+ST.title+'. Today\'s business word is '+ST.concept+'. '+ST.meaning+'. Read each line out loud, and I will listen.',{force:true});
+    $('go').onclick=()=>MIC==='no'?silentRead():readLine(0);
+  }
+  // read aloud, one sentence at a time
+  function readLine(k){
+    if(k>=sents.length)return afterReading();
+    const s=sents[k];let fails=0;
+    render('<div class="row" style="justify-content:space-between"><span class="muted">📖 '+ST.title+' · line '+(k+1)+' of '+sents.length+'</span></div><div class="bar"><div style="width:'+Math.round(100*k/sents.length)+'%"></div></div><p class="prompt small muted">Read this line out loud. Tap <b>Read it</b>, then read.</p><div class="sentence" id="sent">'+esc(s)+'</div><div class="row" style="justify-content:center"><button class="btn pink" id="say" style="font-size:1.5rem">🎙️ Read it</button><button class="btn ghost sm" id="hear">🔊 Help, read it to me</button></div><p class="feedback" id="fb"></p><div id="chips" class="center"></div>');
+    if(k===0)speak('Tap Read it, then read the line out loud.',{force:true});
+    $('hear').onclick=()=>{speak(s,{force:true,rate:.85});res.helped=(res.helped||0)+1};
+    $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening… read the whole line';const r=await listen(Math.min(15000,3500+s.length*90));{const sb=$('say');if(sb)sb.disabled=false};
+      if(r.err&&MIC==='no'){res.mode='silent';return silentRead()}
+      if(r.err){fails++;if(fails>=2){$('fb').textContent='I could not hear that line. Let\'s move on.';return nextBtn(()=>readLine(k+1))}$('fb').textContent='I did not catch that. Tap Read it and read a little louder.';return}
+      const m=wordMatch(s,r.text,r.alts).filter(x=>x.w.length>2);const miss=m.filter(x=>!x.ok).map(x=>x.w);res.checked+=m.length;
+      $('chips').innerHTML=m.map(x=>'<span class="chip '+(x.ok?'ok':'bad')+'">'+x.w+'</span>').join('');
+      if(!miss.length||miss.length<=Math.max(0,Math.floor(m.length*0.1))){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));coins(2);return nextBtn(()=>readLine(k+1))}
+      const tough=miss.slice(0,2);tough.forEach(w=>{res.missed.push(w);D.reading.tricky[w]=(D.reading.tricky[w]||0)+1});save();
+      $('fb').textContent='Nice. Let\'s fix the pink words.';speak('Nice reading. Let\'s fix the pink words together.',{force:true});
+      nextBtn(()=>fixWords(tough,()=>readLine(k+1)),'Fix the words ➜','pink');
+    };
+  }
+  function fixWords(list,cont){
+    if(!list.length)return cont();const w=list[0];
+    render('<p class="prompt small muted">Listen, then say it back.</p><p class="prompt word">'+w+'</p><div class="row" style="justify-content:center"><button class="btn ghost" id="hear">🔊 Hear it</button><button class="btn pink" id="say">🎙️ My turn</button></div><p class="feedback" id="fb"></p>');
+    const hear=()=>speak(w,{force:true,rate:.75});hear();$('hear').onclick=hear;let t=0;
+    $('say').onclick=async()=>{$('fb').textContent='Listening…';const r=await listen(4000);
+      if(r.err&&MIC==='no')return nextBtn(()=>fixWords(list.slice(1),cont));
+      if(r.err){$('fb').textContent='Say it a little louder.';return}
+      if(wordMatch(w,r.text,r.alts).every(x=>x.ok)){$('fb').textContent='That is it! '+w;speak('That is it!');coins(1);return nextBtn(()=>fixWords(list.slice(1),cont))}
+      t++;if(t>=2){$('fb').textContent='Good try. It is "'+w+'". We will practice it in Word Work.';speak('Good try. It is '+w+'. We will practice it another time.',{force:true});return nextBtn(()=>fixWords(list.slice(1),cont))}
+      $('fb').textContent='I heard "'+r.text+'". Once more: '+w;hear();
+    };
+  }
+  // no microphone: read silently, then listen-and-tap word check
+  function silentRead(){
+    let t0=null,iv=null;
+    render('<p class="prompt small">Step 1: tap the pink button.<br>Step 2: read the story to yourself.<br>Step 3: tap the green button when you finish.</p><div class="row" style="justify-content:center"><button class="btn pink" id="start" style="font-size:1.5rem">👀 Tap here to start reading</button></div><div id="story" hidden><div class="passage">'+esc(ST.text)+'</div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn good" id="stop" style="font-size:1.5rem">✅ I finished reading</button><span class="big" id="clock" style="font-size:1.4rem">0:00</span></div></div>');
+    speak('Tap the pink button, read the story to yourself, then tap the green button.',{force:true});
+    $('start').onclick=()=>{t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
+    $('stop').onclick=()=>{clearInterval(iv);res.secs=Math.round((performance.now()-t0)/1000);res.wpm=Math.round(res.words/(res.secs/60));wordCheck()};
+  }
+  function wordCheck(){
+    const uniq=[...new Set(ST.text.replace(/[^A-Za-z' ]/g,' ').toLowerCase().split(/\s+/).filter(w=>w.length>3))];const q=shuffle(uniq).slice(0,6);let n=0;
+    function ask(){if(n>=q.length)return afterReading();const w=q[n++];const pool=uniq.filter(x=>x!==w);const dis=shuffle(pool.filter(x=>x[0]===w[0]||Math.abs(x.length-w.length)<=1)).slice(0,3);while(dis.length<3)dis.push(pick(pool));const opts=shuffle([w].concat([...new Set(dis)]).slice(0,4));
+      render('<div class="row" style="justify-content:space-between"><span class="muted">🔍 Word check · '+n+' of '+q.length+'</span></div><p class="prompt small">Listen. Tap the word you hear.</p><div class="row" style="justify-content:center"><button class="btn pink" id="hear">🔊 Hear the word</button></div><div class="opts">'+opts.map(o=>'<button class="opt" style="font-size:1.5rem" data-v="'+o+'">'+o+'</button>').join('')+'</div><p class="feedback" id="fb"></p>');
+      const say=()=>speak(w,{force:true,rate:.85});$('hear').onclick=say;setTimeout(say,500);let a=false;
+      document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(a)return;a=true;res.checked++;if(b.dataset.v===w){b.classList.add('right');$('fb').textContent=pick(CHEERS);coins(1)}else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'". Say it: '+w;speak('The word was '+w+'. Say it with me. '+w,{force:true,rate:.85});res.missed.push(w);D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save()}nextBtn(ask)})}
+    ask();
+  }
+  function afterReading(){render('<div class="stars">🌟</div><h2 class="center">You read the whole story!</h2><p class="center">'+(res.missed.length?'Words to keep practicing: <b>'+[...new Set(res.missed)].join(', ')+'</b>.':'Not a single word tripped you up.')+'</p><p class="center muted">Now three questions. If you are not sure, look back at the story.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Questions</button></div>');speak('You read the whole story! Now three questions.');$('go').onclick=()=>question(0)}
+  function question(qi){
+    if(qi>=ST.qs.length)return orderGame();
+    const Q=ST.qs[qi];const ans=Q[1];const opts=shuffle(Q.slice(1));let second=false;
+    function show(){
+      render('<div class="row" style="justify-content:space-between"><span class="muted">📖 Question '+(qi+1)+' of 3'+(second?' · look back and try again':'')+'</span><button class="speak" id="sp">🔊</button></div><p class="prompt small">'+Q[0]+'</p><div class="opts one">'+opts.map(o=>'<button class="opt txt" data-v="'+esc(o)+'">'+o+'</button>').join('')+'</div><p class="feedback" id="fb"></p><details id="look"><summary class="muted" style="cursor:pointer">📖 Look back at the story</summary><div class="passage" style="font-size:1.15rem;margin-top:8px">'+esc(ST.text)+'</div></details>');
+      $('sp').onclick=()=>speak(Q[0]+'. '+opts.join('. '),{force:true});speak(Q[0],{force:true});
+      let a=false;document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(a)return;a=true;const ok=b.dataset.v===ans;
+        if(ok){b.classList.add('right');$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));if(!second){res.comp++;coins(3)}else coins(1);return nextBtn(()=>question(qi+1))}
+        b.classList.add('wrong');
+        if(!second){second=true;const hint=sents.find(s=>norm(s).includes(norm(ans).split(' ').slice(0,2).join(' ')))||sents.find(s=>norm(s).includes(norm(ans).split(' ')[0]))||'';$('fb').textContent='Not yet. Here is the clue from the story.';speak('Not yet. Listen to this part of the story. '+hint+'. Now try again.',{force:true,rate:.95});
+          const fb=$('fb');const p=document.createElement('div');p.className='sentence';p.style.fontSize='1.3rem';p.textContent=hint;fb.parentNode.insertBefore(p,fb.nextSibling);return nextBtn(()=>show(),'Try again ➜','pink')}
+        document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===ans)x.classList.add('right')});$('fb').textContent='The answer was: '+ans;speak('The answer was: '+ans,{force:true});nextBtn(()=>question(qi+1));
+      });
+    }
+    show();
+  }
+  function orderGame(){
+    const ev=ST.order;const sh=shuffle(ev);let k=0,mistakes=0;
+    render('<div class="row" style="justify-content:space-between"><span class="muted">📖 Put it in order</span></div><p class="prompt small">What happened <b>first</b>? Tap the events in order: first, next, last.</p><div class="opts one" id="ev">'+sh.map(e=>'<button class="opt txt" data-v="'+esc(e)+'">'+e+'</button>').join('')+'</div><p class="feedback" id="fb"></p>');
+    speak('What happened first? Tap the events in order.',{force:true});
+    document.querySelectorAll('#ev .opt').forEach(b=>b.onclick=()=>{if(b.dataset.done)return;const want=ev[k];if(b.dataset.v===want){b.dataset.done='1';b.classList.add('right');b.textContent=(k+1)+'. '+want;k++;speak(['First','Next','Last'][Math.min(k-1,2)]+': '+want,{force:true});if(k>=ev.length){res.order=mistakes===0;$('fb').textContent=mistakes?'You got the order!':'Perfect order, first try!';coins(mistakes?1:3);nextBtn(retell)}}else{mistakes++;b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),600);$('fb').textContent='Hmm, that happened later. What came '+['first','next','last'][k]+'?';speak('That happened later. What came '+['first','next','last'][k]+'?',{force:true})}});
+  }
+  function retell(){
+    if(MIC==='no')return retellPick();
+    render('<div class="row" style="justify-content:space-between"><span class="muted">📖 Tell it back</span></div><p class="prompt small">Tell me the story in your own words. Who was in it, what happened, and what did they learn? Tap the button and talk for as long as you like.</p><div class="row" style="justify-content:center"><button class="btn pink" id="say" style="font-size:1.5rem">🎙️ Start telling</button></div><p class="feedback" id="fb"></p><div id="chips" class="center"></div>');
+    speak('Tell me the story in your own words. Who was in it, what happened, and what did they learn? Tap the button and start talking.',{force:true});
+    let attempts=0;
+    $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening… tell me the story';const r=await listen(20000);{const sb=$('say');if(sb)sb.disabled=false};
+      if(r.err&&MIC==='no')return retellPick();
+      if(r.err){attempts++;if(attempts>=2)return retellPick();$('fb').textContent='I did not catch that. Tap and start talking right away.';return}
+      const said=norm(r.text+' '+(r.alts||[]).join(' '));const hits=ST.keys.filter(k=>said.includes(k));const wc=norm(r.text).split(' ').filter(Boolean).length;res.retell={hits:hits.length,of:ST.keys.length,words:wc,text:r.text};
+      $('chips').innerHTML='<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text)+'"</p>'+ST.keys.map(k=>'<span class="chip '+(hits.includes(k)?'ok':'')+'">'+k+'</span>').join('');
+      if(hits.length>=4||wc>=25){$('fb').textContent='Great retelling! You remembered '+hits.length+' key parts.';speak('Great retelling! You remembered '+hits.length+' key parts of the story.');coins(5);D.stars+=1;return nextBtn(finish)}
+      if(attempts===0){attempts++;$('fb').textContent='Good start. Can you add more? Think: who, what happened, and the business word '+ST.concept+'.';speak('Good start! Tell me more. Who was in it? What happened? And what does '+ST.concept+' mean?',{force:true});return}
+      $('fb').textContent='Nice try. The key ideas were: '+ST.keys.slice(0,5).join(', ')+'.';speak('Nice try. The key ideas were '+ST.keys.slice(0,5).join(', ')+'.',{force:true});coins(2);nextBtn(finish);
+    };
+  }
+  function retellPick(){
+    const good='In this story, '+ST.order[0].toLowerCase()+', then '+ST.order[1].toLowerCase()+', and finally '+ST.order[2].toLowerCase()+'.';
+    const other=STORIES.filter(s=>s!==ST);const bad1='In this story, '+pick(other).order[0].toLowerCase()+', then '+pick(other).order[1].toLowerCase()+'.';const bad2='In this story, '+ST.order[2].toLowerCase()+', then '+ST.order[0].toLowerCase()+'.';
+    const opts=shuffle([good,bad1,bad2]);
+    render('<div class="row" style="justify-content:space-between"><span class="muted">📖 Tell it back</span></div><p class="prompt small">Say the story out loud in your own words to someone nearby (or the mirror!). Then tap the summary that tells this story best.</p><div class="opts one">'+opts.map(o=>'<button class="opt txt" data-v="'+esc(o)+'">'+o+'</button>').join('')+'</div><p class="feedback" id="fb"></p>');
+    speak('Tell the story out loud in your own words. Then tap the summary that tells this story best.',{force:true});let a=false;
+    document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(a)return;a=true;const ok=b.dataset.v===good;res.retell={pick:ok};if(ok){b.classList.add('right');$('fb').textContent='That is the story!';coins(3)}else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===good)x.classList.add('right')});$('fb').textContent='This one tells our story.'}nextBtn(finish)});
+  }
+  function finish(){
+    D.reading.used.push(ST.title);D.reading.history.push(res);
+    const acc=res.checked?Math.round(100*(res.checked-res.missed.length)/res.checked):null;res.acc=acc;
+    const h=D.reading.history.slice(-2);
+    if(h.length===2&&h.every(x=>x.comp===3&&(x.acc===null||x.acc>=95))&&D.reading.level<4){D.reading.level++;D.reading.history.push({levelUp:D.reading.level,date:todayKey()});speak('Your stories just got a level harder. You earned it!')}
+    else if(h.length===2&&h.every(x=>x.comp<2)&&D.reading.level>0){D.reading.level--}
+    D.stars+=1;coins(10);save();
+    completeQuest('story','"'+ST.title+'" · business word: '+ST.concept+' · '+res.comp+' of 3 questions'+(acc!==null?' · '+acc+'% of words read right':'')+(res.missed.length?' · practice: '+[...new Set(res.missed)].join(', '):''),done);
+  }
+  pauseMusicGate(intro);
+}
+// ---------- Echo Stage: speech ----------
+const SPEECHLV=[
+ {n:'Clear sounds',hint:'Say every sound. Especially the end of the word.',items:['red','little','think','three','spoon','street','yellow','brother','world','girl','squirrel','mother','thank','crisp','lamp']},
+ {n:'Two-part words',hint:'Clap the two parts, then say it smoothly.',items:['basket','rabbit','window','market','pocket','napkin','customer','muffin','sister','winter','garden','money','ticket','rocket','jacket']},
+ {n:'Short sentences',hint:'Say the whole sentence in one breath.',items:['I sell muffins.','The box is full.','She counts the money.','We walk to the door.','The dog is happy.','My brother likes pizza.','The red car is fast.','It is time for lunch.']},
+ {n:'Business talk',hint:'Slow and clear, like talking to a customer.',items:['Would you like a muffin today?','Thank you for your order.','That will be two dollars, please.','Profit is the money you keep.','Here is your change.','Come back and see us again!','What flavor would you like?','I made these this morning.']},
+ {n:'Longer sentences',hint:'Pause at the comma. Keep going to the end.',items:['When the sun came out, everyone wanted cold lemonade.','A customer is a person who buys what you sell.','She saved her money in three jars: spend, save, and grow.','If you listen to your customers, they will come back.','My cost was six dollars, and my revenue was twelve.','Good quality takes more time, but it brings people back.']},
+ {n:'Tell me about it',hint:'Talk for a few sentences. There is no wrong answer.',open:true,items:['Tell me two things you would sell and why.','Tell me about your favorite song and why you like it.','Tell me what you did at school today.','Tell me how to make a sandwich, step by step.','If you had one hundred dollars for a business, what would you buy first?','Tell me about a time you helped someone.']},
+ {n:'Tongue twisters',hint:'Slow first. Then a little faster. Smile!',items:['She sells seashells by the seashore.','Red lorry, yellow lorry.','Six sticky skeletons.','Fresh fried fish.','Which wristwatches are Swiss wristwatches?','A proper copper coffee pot.']},
+];
+function speechQuest(done){
+  const N=5;let i=0,right=0;const lvl=()=>sk('speech').level;const used=new Set();
+  function next(){
+    if(i>=N)return finish();
+    const L=SPEECHLV[Math.min(lvl(),SPEECHLV.length-1)];const fresh=L.items.filter(x=>!used.has(x));const target=pick(fresh.length?fresh:L.items);used.add(target);let tries=0;
+    render('<div class="row" style="justify-content:space-between"><span class="muted">🎤 Echo Stage · '+L.n+' · '+(i+1)+' of '+N+'</span></div><div class="bar"><div style="width:'+Math.round(100*i/N)+'%"></div></div><p class="prompt small muted">'+(L.open?'Answer out loud. Tap <b>My turn</b>, then talk.':'Read this out loud. Tap <b>My turn</b>, then say it.')+'</p><p class="prompt '+(target.length<12?'word':'small')+'" style="'+(L.open?'font-weight:500':'')+'">'+esc(target)+'</p><p class="center muted" style="font-size:1rem">'+L.hint+'</p><div class="row" style="justify-content:center">'+(L.open?'':'<button class="btn ghost" id="hear">🔊 Hear it</button>')+'<button class="btn pink" id="say" style="font-size:1.5rem">🎙️ My turn</button></div><p class="feedback" id="fb"></p><div id="words" class="center"></div>');
+    if($('hear'))$('hear').onclick=()=>speak(target,{force:true,rate:.85});
+    if(i===0)speak(L.open?'Answer out loud. Tap My turn, then talk.':'Read this out loud. Tap My turn, then say it.',{force:true});
+    if(L.open)speak(target,{force:true,queue:true});
+    $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening…';const r=await listen(L.open?20000:(target.length>30?9000:6000));{const sb=$('say');if(sb)sb.disabled=false};
+      if(r.err&&MIC==='no'){ // honor mode
+        $('fb').textContent='No microphone here. Listen, then say it 3 times, loud and clear.';speak(target+'. '+target+'. '+target+'.',{force:true,rate:.8});return nextBtn(()=>mark(target,true,'honor'),'I said it 3 times! Next')}
+      if(r.err){$('fb').textContent='I did not catch that. Tap My turn and speak up.';return}
+      if(L.open){const wc=norm(r.text).split(' ').filter(Boolean).length;$('words').innerHTML='<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text)+'"</p>';
+        if(wc>=8){$('fb').textContent='Great answer! '+wc+' words. Clear and strong.';speak('Great answer! You said '+wc+' words. Clear and strong.');return mark(target,true,'mic',r.text)}
+        if(tries<1){tries++;$('fb').textContent='Good start ('+wc+' words). Say a little more. Why? What else?';speak('Good start! Tell me more. Why? What else?',{force:true});return}
+        $('fb').textContent='Nice. Next time try for a few sentences.';return mark(target,wc>=4,'mic',r.text)}
+      const m=wordMatch(target,r.text,r.alts).filter(x=>x.w.length>1);const score=m.filter(x=>x.ok).length/m.length;
+      $('words').innerHTML=m.map(x=>'<span class="chip '+(x.ok?'ok':'bad')+'">'+x.w+'</span>').join('')+'<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text||'…')+'"</p>';
+      if(score>=0.9){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));return mark(target,true,'mic',r.text)}
+      if(tries<2){tries++;$('fb').textContent='Almost! Listen to the pink words, then try again.';speak('Almost. Listen. '+target+'. Your turn.',{force:true,rate:.8});return}
+      $('fb').textContent='Good effort. Here it is once more, then we move on.';speak(target,{force:true,rate:.8});mark(target,false,'mic',r.text);
+    };
+  }
+  function mark(t,ok,mode,heard){i++;logItem('speech',{t,ok,mode,heard,level:lvl()});if(mode==='mic')record('speech',lvl(),ok,true);if(ok){right++;coins(2)}
+    if(advanceIfReady('speech',SPEECHLV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">🎤⭐</div><h2 class="center">Speech level up!</h2><p class="center">Next: <b>'+SPEECHLV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');speak('Speech level up! Your voice is getting clearer every day.');coins(5);$('go').onclick=next})}
+    nextBtn(next)}
+  function finish(){D.stars+=1;coins(8);save();completeQuest('speech',right+' of '+N+' said clearly · level: '+SPEECHLV[Math.min(lvl(),SPEECHLV.length-1)].n,done)}
+  micIntro('Echo Stage','You are the star. I show you words and lines, you say them out loud, and I check every word. Clear voice, big smile.',next);
+}
+
+// ---------- Typing Island ----------
+const TYPELV=[
+ {n:'Copy the word',mode:'copy',src:'level'},
+ {n:'Spell what you hear',mode:'hear',src:'level'},
+ {n:'Copy the sentence',mode:'copy',items:['I sell muffins.','The box is full.','She counts the money.','We walk to the door.','The dog runs fast.','My mom likes tea.']},
+ {n:'Spell what you hear',mode:'hear',src:'level'},
+ {n:'Type the sentence you hear',mode:'hear',items:['Thank you for your order.','That will be two dollars.','We walk to the next house.','Profit is the money you keep.','A customer buys what you sell.']},
+ {n:'Business words',mode:'hear',items:['profit','customer','price','cost','revenue','inventory','location','budget','quality','service']},
+];
+function typingQuest(done){
+  const N=5;let i=0,right=0;const times=[];const lvl=()=>sk('typing').level;const used=new Set();
+  function source(L){if(L.items)return L.items;const W=WORDLV[Math.min(sk('words').level,WORDLV.length-1)].w.map(x=>x[0]);return W}
+  function next(){
+    if(i>=N)return finish();
+    const L=TYPELV[Math.min(lvl(),TYPELV.length-1)];const pool=source(L).filter(x=>!used.has(x));const target=pick(pool.length?pool:source(L));used.add(target);const hear=L.mode==='hear';let t0=null,tries=0;
+    render('<div class="row" style="justify-content:space-between"><span class="muted">⌨️ Typing Island · '+L.n+' · '+(i+1)+' of '+N+'</span><button class="speak" id="sp" aria-label="Hear it">🔊</button></div><div class="bar"><div style="width:'+Math.round(100*i/N)+'%"></div></div><p class="prompt small muted">'+(hear?'Listen, then type what you hear.':'Type exactly what you see.')+'</p>'+(hear?'<div class="row" style="justify-content:center"><button class="btn ghost" id="hear2">🔊 Hear it again</button></div>':'<p class="prompt '+(target.length<12?'word':'small')+'" id="tgt">'+esc(target)+'</p>')+'<div class="row" style="justify-content:center"><input type="text" id="typed" class="wide" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-size:1.6rem;text-align:center" placeholder="type here"><button class="btn good" id="ok">Check</button></div><p class="feedback" id="fb"></p>');
+    const say=()=>speak(target,{force:true,rate:.85});$('sp').onclick=say;if(hear){$('hear2').onclick=say;setTimeout(say,500)}
+    const inp=$('typed');inp.focus();inp.oninput=()=>{if(!t0)t0=performance.now()};
+    const check=()=>{const v=norm(inp.value),want=norm(target);if(!v)return;const secs=t0?Math.round((performance.now()-t0)/100)/10:null;
+      if(v===want){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));logItem('typing',{t:target,typed:inp.value,ok:true,secs,tries,level:lvl()});record('typing',lvl(),tries===0,true);right++;coins(2);if(secs)times.push({chars:target.length,secs});i++;
+        if(advanceIfReady('typing',TYPELV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">⌨️⭐</div><h2 class="center">Typing level up!</h2><p class="center">Next: <b>'+TYPELV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');coins(5);$('go').onclick=next})}
+        return nextBtn(next)}
+      if(tries<1){tries++;const diff=want.split('').map((c,k)=>c===(v[k]||'')?c:'<b style="color:var(--accent)">'+(c===' '?'␣':c)+'</b>').join('');$('fb').innerHTML='Not yet. The pink letters need fixing: '+diff;speak('Not yet. Look at the pink letters. '+(hear?'Listen again: '+target:'')+'. Fix it and check again.',{force:true,rate:.9});inp.focus();return}
+      $('fb').innerHTML='It is spelled <b>'+esc(target)+'</b>. Type it once to lock it in.';speak('It is spelled like this. Type it once to lock it in.',{force:true});inp.value='';inp.placeholder=target;logItem('typing',{t:target,typed:v,ok:false,secs,tries,level:lvl()});record('typing',lvl(),false);tries=99;i++;
+      $('ok').onclick=()=>{if(norm(inp.value)===want){coins(1);next()}else{inp.focus()}}};
+    $('ok').onclick=check;inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('ok').click()}};
+  }
+  function finish(){const tot=times.reduce((a,x)=>({c:a.c+x.chars,s:a.s+x.secs}),{c:0,s:0});const wpm=tot.s?Math.round((tot.c/5)/(tot.s/60)):null;D.typing.history.push({date:todayKey(),wpm,right});D.stars+=1;coins(8);save();completeQuest('typing',right+' of '+N+' typed right'+(wpm?' · about '+wpm+' words per minute':'')+' · level: '+TYPELV[Math.min(lvl(),TYPELV.length-1)].n,done)}
+  render('<div class="stars">⌨️</div><h2 class="center">Typing Island</h2><p class="center">Five words or lines. Type carefully. Spelling counts, speed comes later.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Start</button></div>');speak('Typing Island! Five words or lines. Type carefully.');$('go').onclick=next;
+}
+// ---------- breaks: music and dance ----------
+let AC=null;
+function beatStart(bpm){if(MUSIC)return ()=>{};try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){return ()=>{}}
+  const period=60/bpm;let n=0;let stopped=false;
+  function kick(t){const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);g.gain.setValueAtTime(.9,t);g.gain.exponentialRampToValueAtTime(.001,t+.25);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+.3)}
+  function hat(t){const b=AC.createBuffer(1,AC.sampleRate*.05,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);const src=AC.createBufferSource();src.buffer=b;const g=AC.createGain();g.gain.value=.25;const f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=6000;src.connect(f).connect(g).connect(AC.destination);src.start(t)}
+  function clap(t){const b=AC.createBuffer(1,AC.sampleRate*.12,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);const src=AC.createBufferSource();src.buffer=b;const g=AC.createGain();g.gain.value=.5;const f=AC.createBiquadFilter();f.type='bandpass';f.frequency.value=1800;src.connect(f).connect(g).connect(AC.destination);src.start(t)}
+  function tick(){if(stopped)return;const t=AC.currentTime+.05;kick(t);hat(t+period/2);if(n%2===1)clap(t);n++;setTimeout(tick,period*1000)}
+  tick();return ()=>{stopped=true};
+}
+const BREAK_KINDS=['beat','routine','dance','freeze','chant','mirror','statue'];
+function breakMenu(after){
+  resumeMusicHint();today().breaks++;save();
+  const card=(k,em,t,sub,style)=>'<button class="opt" style="font-size:1.25rem;'+(style||'')+'" data-b="'+k+'">'+em+' '+t+'<br><span class="muted" style="font-size:.85rem;font-weight:500">'+sub+'</span></button>';
+  render('<h2 class="center">🎶 Break time! Pick one</h2><div class="opts" id="breaks">'+card('surprise','🎲','Surprise me!','a different break every time','border-color:var(--coin)')+card('routine','🩰','Learn the Routine','8 moves, TikTok style')+card('beat','🥁','Tap the Beat','hit the pads on the beat')+card('dance','💃','Dance Party','a beat plays, do the moves')+card('freeze','🧊','Freeze Dance','dance, then freeze')+card('chant','🎤','Power Chant','repeat after me, loud')+card('mirror','🪞','Copy the Pose','strike and hold')+card('playlist','🎵','My playlist','your song, our moves')+card('skip','🗺️','Skip break','back to the map')+'</div>');
+  speak('Break time! Pick one, Camila.');
+  document.querySelectorAll('#breaks .opt').forEach(b=>b.onclick=()=>{let k=b.dataset.b;if(k==='skip')return after();if(k==='surprise'){k=pick(BREAK_KINDS.filter(x=>x!==D.lastBreak))}D.lastBreak=k;save();runBreak(k,after)});
+}
+function runBreak(kind,after){
+  const MOVES=shuffle([['👏','Clap clap clap!'],['🌀','Spin around!'],['🦘','Jump jump!'],['🙌','Hands in the air!'],['🐛','Wiggle wiggle!'],['🤖','Robot arms!'],['🕺','Shake your hips!'],['🦶','Stomp stomp!'],['🫧','Float like a bubble!'],['⭐','Star jump!'],['🦩','Stand on one foot!'],['🌊','Make waves with your arms!'],['🐸','Frog hop!'],['🎸','Air guitar!'],['🪩','Disco point!'],['🐢','Slow motion!'],['⚡','Fast fast fast!'],['🧘','Freeze and breathe!'],['🦋','Butterfly arms!'],['🥁','Drum on your knees!']]);
+  const CHANT=shuffle(['I can do hard things!','My brain is getting stronger!','Mistakes help me learn!','I am smart and I am brave!','Nothing can stop Camila!','I keep going!','I am a superstar!','Not yet means I am on my way!','I am the boss of my brain!','Every try makes me stronger!','I run my own business!','Big goals, small steps!','I can learn anything!']);
+  let t=kind==='routine'?75:(D.settings.breakSecs||45);let stop=()=>{};let timers=[];
+  const fmt=s=>Math.floor(Math.max(0,s)/60)+':'+String(Math.max(0,s)%60).padStart(2,'0');
+  render('<h2 class="center" id="btitle"></h2><div class="big" id="move" style="font-size:4.5rem;min-height:1.3em">🎶</div><p class="prompt small center" id="mtext"></p><div id="strip"></div><div class="big" id="timer" style="font-size:2rem">'+fmt(t)+'</div><div class="row" style="justify-content:center"><button class="btn ghost" id="more">+30 seconds</button><button class="btn pink" id="skip">Done, next quest</button></div>');
+  let restartRoutine=null;
+  $('more').onclick=()=>{t+=30;if(restartRoutine)restartRoutine()};
+  const show=(em,txt,say)=>{if($('move'))$('move').textContent=em;if($('mtext'))$('mtext').textContent=txt;if(say!==false)speak(txt)};
+  if(kind==='beat'){
+    $('btitle').textContent='🥁 Tap the Beat';$('mtext').textContent='Tap the pad that lights up, right on the beat!';
+    $('move').innerHTML='<div class="opts" id="pads" style="max-width:420px;margin:0 auto">'+[0,1,2,3].map(k=>'<button class="opt" data-k="'+k+'" style="min-height:110px;font-size:2rem;background:var(--soft)">'+['🎵','🎶','🎤','⭐'][k]+'</button>').join('')+'</div><p class="big" id="score" style="font-size:1.6rem">Score 0</p>';
+    let score=0,live=null,liveAt=0;const pads=[...document.querySelectorAll('#pads .opt')];
+    const light=()=>{if(t<=0)return;pads.forEach(p=>p.style.background='var(--soft)');const k=rnd(0,3);live=k;liveAt=performance.now();pads[k].style.background='var(--accent)';timers.push(setTimeout(()=>{if(live===k){pads[k].style.background='var(--soft)';live=null}},700))};
+    stop=beatStart(100);timers.push(setInterval(light,600));
+    pads.forEach(p=>p.onclick=()=>{const k=+p.dataset.k;if(live===k){const dt=performance.now()-liveAt;const pts=dt<250?3:dt<500?2:1;score+=pts;p.style.background='var(--good)';live=null;$('score').textContent='Score '+score+(pts===3?' 🔥':'')}else{p.style.background='var(--badbg)';setTimeout(()=>{if(live!==k)p.style.background='var(--soft)'},150)}});
+    timers.push(setTimeout(()=>{const bonus=Math.min(10,Math.floor(score/6));coins(bonus);if($('mtext'))$('mtext').textContent='Score '+score+'! +'+bonus+' coins';speak('Score '+score+'! Nice rhythm!')},t*1000));
+  }
+  if(kind==='routine'){
+    const ROUTINES=[
+      [['👏','Clap, clap'],['🙌','Arms up'],['👉','Point right'],['👈','Point left'],['🫰','Snap, snap'],['🕺','Hip bump'],['🌀','Spin'],['🙆','Big finish!']],
+      [['🦶','Step tap'],['🦶','Step tap'],['🫶','Heart hands'],['🙌','Push the sky'],['🤖','Robot'],['🤖','Robot'],['🌊','Wave arms'],['⭐','Pose!']],
+      [['👋','Wave high'],['👋','Wave low'],['🔄','Roll your shoulders'],['🤸','Lean left'],['🤸','Lean right'],['👏','Clap above'],['🦘','Little jump'],['🪩','Disco point!']],
+      [['🫰','Snap'],['🫰','Snap'],['🙆','Circle arms'],['👟','Slide right'],['👟','Slide left'],['🙋','Hand up'],['🤷','Shrug'],['🎉','Strike a pose!']],
+      [['🤲','Palms out'],['🤲','Palms in'],['👆','Point up'],['👇','Point down'],['💃','Hip left'],['💃','Hip right'],['🌀','Spin'],['😎','Cool pose!']],
+      [['🥁','Drum knees'],['🥁','Drum knees'],['🙌','Roof'],['🙌','Roof'],['🦵','Kick'],['🦵','Kick'],['🫶','Heart'],['✨','Sparkle hands!']],
+    ];
+    const idx=dayNum()%ROUTINES.length;const R=ROUTINES[idx];
+    $('btitle').textContent='🩰 Routine #'+(idx+1)+' · learn it like a dance video';
+    $('strip').innerHTML='<div class="row" style="justify-content:center;gap:6px">'+R.map((m,i)=>'<div class="pill" id="rm'+i+'" style="flex-direction:column;padding:6px 10px;font-size:.8rem;gap:0"><span style="font-size:1.5rem">'+m[0]+'</span>'+(i+1)+'</div>').join('')+'</div>';
+    speak('Learn the routine! Eight moves. Watch the first time, then dance it with me, then full speed.',{force:true});
+    stop=beatStart(104);let step=0,round=0;const per=2300;
+    const go=()=>{if(t<=0)return;const m=R[step%8];R.forEach((_,i)=>{const el=$('rm'+i);if(el)el.style.borderColor=(i===step%8)?'var(--accent)':'var(--line)'});show(m[0],(round===0?'Watch: ':round===1?'Now you: ':'Full speed: ')+m[1],round<2);step++;if(step%8===0){round++;if(round===1)speak('Now you try it!',{force:true});if(round===2)speak('Full speed! You know it!',{force:true})}};
+    restartRoutine=()=>{step=0;round=1};
+    timers.push(setTimeout(go,2500));timers.push(setInterval(go,per));
+  }
+  if(kind==='mirror'){$('btitle').textContent='🪞 Copy the Pose';stop=beatStart(90);speak('Copy the pose! Hold it until the next one!');
+    const POSES=shuffle([['🙆','Arms in a big circle'],['🙋','One hand way up'],['🧍','Stand tall like a tree'],['🤸','Lean to the side'],['💪','Flex both arms'],['🤷','Shrug shoulders way up'],['🧎','Down on one knee'],['🙌','Reach for the ceiling'],['🫶','Make a heart with your hands']]);
+    let i=0;const go=()=>{const m=POSES[i%POSES.length];i++;show(m[0],m[1])};timers.push(setTimeout(go,1200));timers.push(setInterval(go,5000));}
+  if(kind==='statue'){$('btitle').textContent='🗿 Statue Game';speak('Statue game! Dance while the beat plays. When I say statue, hold perfectly still!');
+    let playing=false;const cycle=()=>{if(t<=0)return;if(!playing){stop=beatStart(126);playing=true;show('💃','Dance!');timers.push(setTimeout(cycle,rnd(3000,6000)))}else{stop();playing=false;show('🗿','STATUE! Hold it!');timers.push(setTimeout(cycle,rnd(2000,4000)))}};timers.push(setTimeout(cycle,2500));}
+  if(kind==='dance'){$('btitle').textContent='💃 Dance Party';stop=beatStart(120);speak('Dance party! Follow the moves!');
+    const go=()=>{const m=pick(MOVES);show(m[0],m[1])};timers.push(setTimeout(go,1500));timers.push(setInterval(go,4000));}
+  if(kind==='freeze'){$('btitle').textContent='🧊 Freeze Dance';speak('Freeze dance! Dance while the beat plays. When it stops, freeze!');
+    let playing=false;const cycle=()=>{if(t<=0)return;if(!playing){stop=beatStart(118);playing=true;show('💃','Dance!');timers.push(setTimeout(cycle,rnd(4000,7000)))}else{stop();playing=false;show('🧊','FREEZE!');timers.push(setTimeout(cycle,2500))}};timers.push(setTimeout(cycle,2500));}
+  if(kind==='playlist'){$('btitle').textContent='🎵 My playlist';show('🎧','Start your song, then dance!',false);
+    const go=()=>{const m=pick(MOVES);show(m[0],m[1],false)};timers.push(setTimeout(go,6000));timers.push(setInterval(go,4000));}
+  if(kind==='chant'){$('btitle').textContent='🎤 Power Chant';stop=beatStart(96);speak('Power chant! Say it after me, loud and proud!');
+    let i=0;const go=()=>{const line=CHANT[i%CHANT.length];i++;show('🎤',line,false);speak(line);timers.push(setTimeout(()=>show('👉','Your turn! Say it!',false),1800))};timers.push(setTimeout(go,2200));timers.push(setInterval(go,5000));}
+  const iv=setInterval(()=>{t--;if($('timer'))$('timer').textContent=fmt(t);if(t<=0){clearInterval(iv);stop();timers.forEach(clearTimeout);timers.forEach(clearInterval);if(kind!=='beat')show('🏆','Awesome break! Ready for the next quest?');if($('skip'))$('skip').textContent='Next quest ➜'}},1000);
+  $('skip').onclick=()=>{clearInterval(iv);stop();timers.forEach(clearTimeout);timers.forEach(clearInterval);try{speechSynthesis.cancel()}catch(e){}after()};
+}
+// ---------- Weekly Check: the same test every week, so progress is measurable ----------
+// 12 fixed math probes (one per skill-level across the range), 6 fixed words, one benchmark passage.
+const CHECK_PROBES=[['numbers',1],['numbers',4],['add',2],['add',4],['add',5],['sub',2],['sub',3],['sub',4],['mul',1],['mul',2],['mul',4],['money',2]];
+const CHECK_WORDS=['sun','ship','cake','rain','market','remember'];
+const CHECK_PASSAGE={title:'The Saturday Stand',words:104,text:'Every Saturday, Lena sets up a small stand at the end of her street. She sells lemonade for one dollar a cup and cookies for fifty cents. Her mother helps her carry the table, but Lena counts the money herself. Last week she made eleven dollars. She spent four dollars on lemons and sugar, so her profit was seven dollars. This week she wants to try something new. She made a sign with bright colors and asked her neighbor if she could stand near the park instead. More people walk by the park. If more people see her stand, more people might buy.',
+ qs:[['How much does a cup of lemonade cost?','One dollar','Fifty cents','Seven dollars','Four dollars'],['What was her profit last week?','Seven dollars','Eleven dollars','Four dollars','One dollar'],['Why does she want to move near the park?','More people walk by there','It is closer to home','Her mother said so','The park has a table']]};
+function checkDue(){if(!D.checks.length)return true;const last=D.checks[D.checks.length-1].date;return (dayNum()-dayNumOf(last))>=7}
+function dayNumOf(k){const [y,m,d]=k.split('-').map(Number);return Math.floor(Date.UTC(y,m-1,d)/86400000)}
+function checkQuest(done){
+  const res={date:todayKey(),n:D.checks.length+1,math:{right:0,of:CHECK_PROBES.length,secs:[],items:[]},words:{right:0,of:CHECK_WORDS.length,items:[]},read:{}};
+  let i=0;
+  function intro(){render('<div class="stars">📏</div><h2 class="center">'+(res.n===1?'Starting Line':'Weekly Check #'+res.n)+'</h2><p class="center">This is the same short check every week, so we can see how much you have grown. No hints this time, just do your best. Wrong answers are fine, they show us what to work on.</p><p class="center muted">12 math questions, 6 words, one short story.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Start</button></div>');speak(res.n===1?'This is your starting line. The same short check every week shows how much you grow. Just do your best.':'Weekly check! Same questions as last time. Let\'s see how much you grew.');$('go').onclick=math}
+  function math(){
+    if(i>=CHECK_PROBES.length)return words(0);
+    const [key,level]=CHECK_PROBES[i];const item=genItem(key,level);
+    showItem(item,{head:'📏 Check · math '+(i+1)+' of '+CHECK_PROBES.length,bar:Math.round(100*i/CHECK_PROBES.length)},(ok,secs,hinted,given)=>{
+      res.math.items.push({key,level,ok,secs});if(ok){res.math.right++;res.math.secs.push(secs)}i++;logItem('check',{key,level,ok,secs,q:item.q.replace(/<[^>]+>/g,''),a:String(item.answer),given});
+      nextBtn(math)});
+  }
+  function words(k){
+    if(k>=CHECK_WORDS.length)return passage();
+    const w=CHECK_WORDS[k];const entry=WORDLV.flatMap(l=>l.w).find(x=>x[0]===w)||[w,w,'',[]];
+    readWord(w,entry[1],entry[2],entry[3],{head:'📏 Check · word '+(k+1)+' of '+CHECK_WORDS.length,bar:Math.round(100*k/CHECK_WORDS.length),firstSpeak:k===0},(ok,mode,heard)=>{res.words.items.push({w,ok,mode});if(ok)res.words.right++;res.words.mode=mode;nextBtn(()=>words(k+1))});
+  }
+  function passage(){
+    const P=CHECK_PASSAGE;let t0=null,iv=null;
+    if(MIC==='yes'){
+      // read aloud in one go: start the clock, read, stop; the mic checks words sentence by sentence afterwards is too slow, so we time the whole read and sample accuracy on 3 sentences
+      render('<p class="prompt small">Read this story <b>out loud</b>. Tap Start, read the whole thing, then tap Finished.</p><div class="row" style="justify-content:center"><button class="btn pink" id="start" style="font-size:1.4rem">▶ Start reading</button></div><div id="story" hidden><div class="passage">'+esc(P.text)+'</div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn good" id="stop" style="font-size:1.4rem">✅ Finished</button><span class="big" id="clock" style="font-size:1.4rem">0:00</span></div></div>');
+      speak('Read this story out loud. Tap Start, read the whole thing, then tap Finished.',{force:true});
+      $('start').onclick=()=>{t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
+      $('stop').onclick=()=>{clearInterval(iv);res.read.secs=Math.round((performance.now()-t0)/1000);res.read.mode='oral';sample(0)};
+    } else {
+      render('<p class="prompt small">Read this story to yourself. Tap Start, read, then tap Finished.</p><div class="row" style="justify-content:center"><button class="btn pink" id="start" style="font-size:1.4rem">▶ Start reading</button></div><div id="story" hidden><div class="passage">'+esc(P.text)+'</div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn good" id="stop" style="font-size:1.4rem">✅ Finished</button><span class="big" id="clock" style="font-size:1.4rem">0:00</span></div></div>');
+      speak('Read this story to yourself. Tap Start, read, then tap Finished.',{force:true});
+      $('start').onclick=()=>{t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
+      $('stop').onclick=()=>{clearInterval(iv);res.read.secs=Math.round((performance.now()-t0)/1000);res.read.mode='silent';res.read.acc=null;questions(0)};
+    }
+  }
+  // accuracy sample: she re-reads 3 sentences into the mic
+  const SAMPLE=sentences(CHECK_PASSAGE.text).filter((s,j)=>[1,3,5].includes(j));
+  let sampleOk=0,sampleOf=0;
+  function sample(k){
+    if(k>=SAMPLE.length){res.read.acc=sampleOf?Math.round(100*sampleOk/sampleOf):null;return questions(0)}
+    const s=SAMPLE[k];let fails=0;
+    render('<div class="row" style="justify-content:space-between"><span class="muted">📏 Check · read this line '+(k+1)+' of 3</span></div><p class="prompt small muted">One more time, out loud. Tap <b>Read it</b>, then read.</p><div class="sentence">'+esc(s)+'</div><div class="row" style="justify-content:center"><button class="btn pink" id="say" style="font-size:1.4rem">🎙️ Read it</button></div><p class="feedback" id="fb"></p>');
+    $('say').onclick=async()=>{$('say').disabled=true;$('fb').textContent='Listening…';const r=await listen(Math.min(15000,3500+s.length*90));{const sb=$('say');if(sb)sb.disabled=false}
+      if(r.err){fails++;if(fails>=2)return nextBtn(()=>sample(k+1));$('fb').textContent='I did not catch that. Try once more.';return}
+      const m=wordMatch(s,r.text,r.alts).filter(x=>x.w.length>2);sampleOf+=m.length;sampleOk+=m.filter(x=>x.ok).length;$('fb').textContent='Got it.';nextBtn(()=>sample(k+1))};
+  }
+  function questions(qi){
+    const P=CHECK_PASSAGE;if(qi===0)res.read.comp=0;
+    if(qi>=P.qs.length)return finish();
+    const Q=P.qs[qi];const ans=Q[1];const opts=shuffle(Q.slice(1));
+    render('<div class="row" style="justify-content:space-between"><span class="muted">📏 Check · question '+(qi+1)+' of 3</span><button class="speak" id="sp">🔊</button></div><p class="prompt small">'+Q[0]+'</p><div class="opts one">'+opts.map(o=>'<button class="opt txt" data-v="'+esc(o)+'">'+o+'</button>').join('')+'</div><p class="feedback" id="fb"></p>');
+    $('sp').onclick=()=>speak(Q[0]+'. '+opts.join('. '),{force:true});let a=false;
+    document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(a)return;a=true;const ok=b.dataset.v===ans;if(ok){res.read.comp++;b.classList.add('right');$('fb').textContent='Got it.'}else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===ans)x.classList.add('right')});$('fb').textContent='The answer was: '+ans}nextBtn(()=>questions(qi+1))});
+  }
+  function finish(){
+    res.math.pct=Math.round(100*res.math.right/res.math.of);res.math.median=median(res.math.secs);res.words.pct=Math.round(100*res.words.right/res.words.of);
+    const P=CHECK_PASSAGE;res.read.wpm=res.read.secs?Math.round(P.words/(res.read.secs/60)):null;res.read.wcpm=(res.read.wpm&&res.read.acc!=null)?Math.round(res.read.wpm*res.read.acc/100):null;
+    D.checks.push(res);D.stars+=2;coins(15);save();
+    const prev=D.checks.length>1?D.checks[D.checks.length-2]:null;
+    const delta=(a,b)=>(a==null||b==null)?'':(a-b>0?' (up '+(a-b)+')':a-b<0?' (down '+(b-a)+')':' (same)');
+    const msg='Math '+res.math.pct+'%'+(prev?delta(res.math.pct,prev.math.pct):'')+' · words '+res.words.pct+'%'+(prev?delta(res.words.pct,prev.words.pct):'')+(res.read.wpm?' · reading '+res.read.wpm+' words/min'+(prev&&prev.read.wpm?delta(res.read.wpm,prev.read.wpm):''):'')+' · story questions '+res.read.comp+'/3';
+    completeQuest('check',(res.n===1?'Starting line set. ':'Check #'+res.n+' done. ')+msg,done);
+  }
+  micIntro(res.n===1?'Starting Line':'Weekly Check',res.n===1?'A short check to see where you are today. Same one every week, so you can watch yourself grow.':'Same check as last week. Let\'s see how much you grew.',intro);
+}
+// ---------- Progress analytics for the grown-ups panel ----------
+function keyOf(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function daysBack(n){const out=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);out.push(keyOf(d))}return out}
+function dayStats(k){const d=D.days[k];if(!d)return null;const secs=d.log.filter(l=>l.secs&&(l.m==='math'||l.m==='sparks'||l.m==='check')).map(l=>l.secs);return {items:d.items,correct:d.correct,acc:d.items?Math.round(100*d.correct/d.items):null,star:d.star,quests:d.done.length,med:median(secs),words:d.log.filter(l=>l.m==='words').length,wordsOk:d.log.filter(l=>l.m==='words'&&l.ok).length,mins:Math.round(d.secs/60)}}
+function periodStats(keys){const ds=keys.map(dayStats).filter(Boolean);const items=ds.reduce((a,x)=>a+x.items,0),correct=ds.reduce((a,x)=>a+x.correct,0);const meds=ds.map(x=>x.med).filter(x=>x!=null);const words=ds.reduce((a,x)=>a+x.words,0),wordsOk=ds.reduce((a,x)=>a+x.wordsOk,0);const ups=(D.levelLog||[]).filter(e=>keys.includes(e.d)).length;return {days:ds.filter(x=>x.star).length,active:ds.length,items,acc:items?Math.round(100*correct/items):null,med:median(meds),words,wordsAcc:words?Math.round(100*wordsOk/words):null,ups,mins:ds.reduce((a,x)=>a+x.mins,0)}}
+function rangeKeys(from,to){const out=[];const d=new Date(from);while(d<=to){out.push(keyOf(d));d.setDate(d.getDate()+1)}return out}
+// tiny SVG line chart: series = [{name,values:[null|number],color}], labels = x labels
+function lineChart(series,labels,opts){opts=opts||{};const W=640,H=200,P={l:36,r:10,t:10,b:28};const all=series.flatMap(s=>s.values).filter(v=>v!=null);if(!all.length)return '<p class="muted">Not enough data yet.</p>';const max=opts.max||Math.max(10,Math.ceil(Math.max(...all)/10)*10),min=0;const n=labels.length;const x=i=>P.l+(n>1?i*(W-P.l-P.r)/(n-1):0),y=v=>P.t+(H-P.t-P.b)*(1-(v-min)/(max-min));
+  let g='';[0,.25,.5,.75,1].forEach(f=>{const v=min+(max-min)*f;g+='<line x1="'+P.l+'" x2="'+(W-P.r)+'" y1="'+y(v)+'" y2="'+y(v)+'" stroke="var(--line)" stroke-width="1"/><text x="'+(P.l-6)+'" y="'+(y(v)+4)+'" font-size="11" text-anchor="end" fill="var(--muted)">'+Math.round(v)+'</text>'});
+  const step=Math.max(1,Math.ceil(n/8));labels.forEach((l,i)=>{if(i%step===0||i===n-1)g+='<text x="'+x(i)+'" y="'+(H-8)+'" font-size="11" text-anchor="middle" fill="var(--muted)">'+esc(l)+'</text>'});
+  series.forEach(s=>{let d='',pts='';s.values.forEach((v,i)=>{if(v==null){d+='M';return}d+=(d.endsWith('M')||!d?'M':'L')+x(i)+' '+y(v)+' ';pts+='<circle cx="'+x(i)+'" cy="'+y(v)+'" r="3.5" fill="'+s.color+'"/>'});d=d.replace(/M\s*M/g,'M').replace(/M$/,'');g+='<path d="'+d+'" fill="none" stroke="'+s.color+'" stroke-width="2.5" stroke-linejoin="round"/>'+pts});
+  const legend=series.map(s=>'<span class="chip" style="font-size:.85rem"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+s.color+';margin-right:6px"></span>'+esc(s.name)+'</span>').join('');
+  return '<div style="overflow-x:auto"><svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-width:'+W+'px;display:block" role="img">'+g+'</svg></div><div class="row" style="gap:4px">'+legend+'</div>'}
+function barRow(label,val,max,color){const pct=max?Math.round(100*val/max):0;return '<div class="row" style="gap:10px;align-items:center"><span style="width:9em;font-size:.95rem">'+esc(label)+'</span><div class="bar" style="flex:1;height:14px"><div style="width:'+pct+'%;background:'+(color||'var(--accent2)')+'"></div></div><span class="muted" style="width:7em;font-size:.9rem">'+val+' of '+max+'</span></div>'}
+function cmpCell(now,prev,unit,lowerBetter){if(now==null)return '<td>—</td>';let arrow='';if(prev!=null&&now!==prev){const up=now>prev;const good=lowerBetter?!up:up;arrow=' <span style="color:'+(good?'var(--good)':'var(--accent)')+'">'+(up?'▲':'▼')+' '+Math.abs(Math.round((now-prev)*10)/10)+'</span>'}return '<td>'+now+(unit||'')+arrow+'</td>'}
+function analyticsHTML(){
+  const today_=new Date();const wkStart=new Date(today_);wkStart.setDate(today_.getDate()-6);const lastWkStart=new Date(wkStart);lastWkStart.setDate(wkStart.getDate()-7);const lastWkEnd=new Date(wkStart);lastWkEnd.setDate(wkStart.getDate()-1);
+  const thisWeek=periodStats(rangeKeys(wkStart,today_)),lastWeek=periodStats(rangeKeys(lastWkStart,lastWkEnd));
+  const moStart=new Date(today_);moStart.setDate(today_.getDate()-29);const lastMoStart=new Date(moStart);lastMoStart.setDate(moStart.getDate()-30);const lastMoEnd=new Date(moStart);lastMoEnd.setDate(moStart.getDate()-1);
+  const thisMonth=periodStats(rangeKeys(moStart,today_)),lastMonth=periodStats(rangeKeys(lastMoStart,lastMoEnd));
+  const row=(label,a,b)=>'<tr><th>'+label+'</th>'+cmpCell(a.days,b.days)+cmpCell(a.items,b.items)+cmpCell(a.acc,b.acc,'%')+cmpCell(a.med,b.med,'s',true)+cmpCell(a.wordsAcc,b.wordsAcc,'%')+cmpCell(a.ups,b.ups)+'</tr>';
+  const cmp='<div class="tableWrap"><table><tr><th></th><th>Days done</th><th>Answers</th><th>Right</th><th>Think time</th><th>Words read</th><th>Level-ups</th></tr>'+row('Last 7 days',thisWeek,lastWeek)+row('The 7 before',lastWeek,{})+row('Last 30 days',thisMonth,lastMonth)+row('The 30 before',lastMonth,{})+'</table></div><p class="muted" style="font-size:.85rem">Think time = median seconds per math answer (lower is better; under 5 means recall, not counting). Arrows compare with the period before.</p>';
+  // daily chart (30 days)
+  const keys=daysBack(30);const ds=keys.map(dayStats);
+  const daily=lineChart([{name:'% right',values:ds.map(d=>d?d.acc:null),color:'#2f6bff'},{name:'answers',values:ds.map(d=>d?d.items:null),color:'#ffb400'},{name:'think time (s)',values:ds.map(d=>d?d.med:null),color:'#ff4fa3'}],keys.map(k=>k.slice(5)),{max:100});
+  // weekly checks
+  const C=D.checks||[];const cl=C.map(c=>c.n===1?'start':'#'+c.n);
+  const checks=C.length?lineChart([{name:'math %',values:C.map(c=>c.math.pct),color:'#2f6bff'},{name:'words %',values:C.map(c=>c.words.pct),color:'#19a974'},{name:'story q (of 3) ×33',values:C.map(c=>Math.round(c.read.comp*33.3)),color:'#9b5cff'},{name:'reading words/min',values:C.map(c=>c.read.wpm),color:'#ff4fa3'}],cl,{max:Math.max(100,...C.map(c=>c.read.wpm||0))})+'<div class="tableWrap"><table><tr><th>Check</th><th>Date</th><th>Math</th><th>Think time</th><th>Words</th><th>Reading</th><th>Accuracy</th><th>Story q</th></tr>'+C.slice().reverse().map(c=>'<tr><td>'+(c.n===1?'Start':'#'+c.n)+'</td><td>'+c.date+'</td><td>'+c.math.right+'/'+c.math.of+' ('+c.math.pct+'%)</td><td>'+(c.math.median!=null?c.math.median+'s':'—')+'</td><td>'+c.words.right+'/'+c.words.of+'</td><td>'+(c.read.wpm?c.read.wpm+' wpm'+(c.read.mode==='oral'?'':' (silent)'):'—')+'</td><td>'+(c.read.acc!=null?c.read.acc+'%':'—')+'</td><td>'+c.read.comp+'/3</td></tr>').join('')+'</table></div>':'<p class="muted">The first check (her starting line) runs the first day she plays, then every 7 days.</p>';
+  // levels
+  const lv=SKILL_ORDER.map(k=>barRow(SKILLS[k].name,sk(k).level+1,SKILLS[k].levels.length)).join('')+barRow('Word Work',sk('words').level+1,WORDLV.length,'var(--good)')+barRow('Stories',D.reading.level+1,5,'var(--good)')+barRow('Echo Stage',sk('speech').level+1,SPEECHLV.length,'#9b5cff')+barRow('Typing',sk('typing').level+1,TYPELV.length,'#9b5cff');
+  const log=(D.levelLog||[]).slice(-15).reverse().map(e=>'<li>'+e.d+' · '+(SKILLS[e.k]?SKILLS[e.k].name:e.k)+' → level '+(e.l+1)+(SKILLS[e.k]?' ('+SKILLS[e.k].levels[Math.min(e.l,SKILLS[e.k].levels.length-1)].n+')':'')+'</li>').join('');
+  // streak / consistency
+  const cal=daysBack(28).map(k=>{const d=D.days[k];return '<span title="'+k+'" style="display:inline-block;width:18px;height:18px;border-radius:4px;background:'+(d&&d.star?'var(--good)':d?'var(--coin)':'var(--line)')+'"></span>'}).join('');
+  return '<h3>This week vs last week · this month vs last month</h3>'+cmp+'<h3>Last 30 days, day by day</h3>'+daily+'<h3>Weekly Check (same test every week)</h3>'+checks+'<h3>Where she is now</h3>'+lv+'<h3>Level-ups</h3>'+(log?'<ul style="margin:0;padding-left:20px;font-size:.95rem">'+log+'</ul>':'<p class="muted">None yet.</p>')+'<h3>Last 4 weeks</h3><div class="row" style="gap:4px">'+cal+'</div><p class="muted" style="font-size:.85rem">Green = full day, yellow = started, grey = nothing. Streak '+D.streak+', best '+(D.bestStreak||D.streak)+', day stars '+D.dayStars+'.</p>';
+}
+// ---------- today's quest map ----------
+const QUESTS=[
+ {key:'check',em:'📏',name:'Weekly Check',sub:'same test every week',run:checkQuest,when:()=>checkDue()||today().done.includes('check')},
+ {key:'sparks',em:'⚡',name:'Brain Sparks',sub:'quick warm-up',run:sparksQuest},
+ {key:'math',em:'🔢',name:'Math Quest',sub:'your next level',run:mathQuest},
+ {key:'words',em:'🔤',name:'Word Work',sub:'read words out loud',run:wordsQuest},
+ {key:'story',em:'📖',name:'Story Time',sub:'a new business story',run:storyQuest},
+ {key:'speech',em:'🎤',name:'Echo Stage',sub:'say it clearly',run:speechQuest},
+ {key:'typing',em:'⌨️',name:'Typing Island',sub:'spell it, type it',run:typingQuest},
+];
+function activeQuests(){return QUESTS.filter(q=>!q.when||q.when())}
+function home(){
+  const t=today();const QS=activeQuests();const nextQ=QS.find(q=>!t.done.includes(q.key));
+  const tiles=QS.map(q=>{const done=t.done.includes(q.key);const now=nextQ&&nextQ.key===q.key;return '<button class="quest '+(done?'done':now?'now':'locked')+'" data-k="'+q.key+'" '+(done||!now?'disabled':'')+'><span class="em">'+q.em+'</span><b>'+q.name+'</b><span class="sub">'+(done?'✅ done today':now?'▶ tap to start':'🔒 after '+QS[QS.indexOf(q)-1].name)+'</span></button>'}).join('');
+  const greet=t.done.length===0?'Hi '+D.name+'! '+QS.length+' quests today. Start at the top.':t.done.length<QS.length?'Nice work so far! '+(QS.length-t.done.length)+' to go.':'All done! Today\'s star is yours. ⭐';
+  render('<div class="row" style="justify-content:space-between"><h2>'+D.avatar+' Today\'s Quest</h2><span class="streak">🔥 '+D.streak+' day streak</span></div><p>'+greet+'</p><div class="quests" id="qs">'+tiles+'</div>'+(t.star?'<div class="row" style="justify-content:center"><button class="btn ghost" id="bonus">🎁 Bonus round (extra coins)</button><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>':'<div class="row" style="justify-content:center"><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>'));
+  document.querySelectorAll('#qs .quest').forEach(b=>b.onclick=()=>{const q=QUESTS.find(x=>x.key===b.dataset.k);if(q&&nextQ&&q.key===nextQ.key)q.run(home)});
+  if(t.done.length===0&&!D.greeted){D.greeted=todayKey();save();speak(greet)}
+  if($('bonus'))$('bonus').onclick=()=>mathQuest(home);
+  $('trophies').onclick=()=>{render('<h2 class="center">🏅 Badges</h2>'+badgesHTML()+'<p class="center muted">'+D.dayStars+' day stars · '+D.coins+' coins · best streak '+(D.bestStreak||D.streak)+'</p><div class="row" style="justify-content:center"><button class="btn" id="back">Back</button></div>');$('back').onclick=home};
+}
+function completeQuest(key,summary,done){
+  const t=today();if(!t.done.includes(key))t.done.push(key);t.summaries=t.summaries||{};t.summaries[key]=summary;save();hud();
+  const fresh=checkBadges();const q=QUESTS.find(x=>x.key===key);const allDone=activeQuests().every(x=>t.done.includes(x.key));
+  confetti();
+  render('<div class="stars pop">'+q.em+'⭐</div><h2 class="center">'+q.name+' complete!</h2><p class="center">'+esc(summary)+'</p>'+(fresh.length?'<div class="box gold"><b>New badge'+(fresh.length>1?'s':'')+'!</b> '+fresh.map(b=>b.em+' '+b.name).join(' · ')+'</div>':'')+'<div class="row" style="justify-content:center">'+(allDone?'<button class="btn good" id="next" style="font-size:1.5rem">🏆 Finish the day</button>':'<button class="btn pink" id="brk">🎶 Take a break</button><button class="btn good" id="next">Next quest ➜</button>')+'</div>');
+  speak(q.name+' complete! '+(fresh.length?'New badge: '+fresh.map(b=>b.name).join(' and ')+'!':''));
+  if($('brk'))$('brk').onclick=()=>breakMenu(home);
+  $('next').onclick=()=>allDone?dayComplete():home();
+}
+function dayComplete(){
+  const t=today();let newly=[];
+  if(!t.star){t.star=true;const y=new Date();y.setDate(y.getDate()-1);const yk=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');D.streak=(D.lastDay===yk)?D.streak+1:1;D.bestStreak=Math.max(D.bestStreak||0,D.streak);D.lastDay=todayKey();D.dayStars++;D.stars+=3;coins(25);
+    D.prizes.forEach(p=>{if(!p.earned&&D.dayStars-p.start>=p.need){p.earned=todayKey();newly.push(p)}});save();hud();saveResults()}
+  const fresh=checkBadges();confetti();
+  const acc=t.items?Math.round(100*t.correct/t.items):0;
+  render('<div class="stars pop">🏆⭐🏆</div><h1 class="center">Day complete, '+D.name+'!</h1><p class="center">Every quest done. '+t.items+' questions, '+acc+'% right. 🔥 Streak: '+D.streak+' day'+(D.streak===1?'':'s')+'. Day stars: '+D.dayStars+'.</p>'+(newly.length?'<div class="box gold center"><h2>🎉 PRIZE EARNED!</h2><p class="prompt small">'+newly.map(p=>esc(p.name)).join(' and ')+'</p><p class="muted">Show this screen to Dad.</p></div>':'')+(fresh.length?'<div class="box"><b>New badge'+(fresh.length>1?'s':'')+'!</b> '+fresh.map(b=>b.em+' '+b.name).join(' · ')+'</div>':'')+'<div class="box"><span class="tag" style="color:var(--accent2);font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:.9rem">Prizes</span>'+D.prizes.filter(p=>!p.earned).map(p=>'<p>🔒 <b>'+esc(p.name)+'</b> <span class="muted">'+Math.min(p.need,D.dayStars-p.start)+' of '+p.need+' days</span></p><div class="bar"><div style="width:'+Math.round(100*Math.min(p.need,D.dayStars-p.start)/p.need)+'%;background:linear-gradient(90deg,var(--coin),var(--accent))"></div></div>').join('')+D.prizes.filter(p=>p.earned).map(p=>'<p>✅ <b>'+esc(p.name)+'</b> <span class="muted">earned '+p.earned+'</span></p>').join('')+'</div><div class="row" style="justify-content:center"><button class="btn pink" id="brk">🎶 Dance it out</button><button class="btn" id="home">Back to the map</button></div>');
+  speak('Day complete, '+D.name+'! '+(newly.length?'Prize earned: '+newly.map(p=>p.name.replace(/[^\w\s]/g,'')).join(' and ')+'!':'Streak: '+D.streak+' days. See you tomorrow!'));
+  $('brk').onclick=()=>breakMenu(home);$('home').onclick=home;
+}
+// save a copy of results where a parent can get them (artifact db when available; always on this device)
+async function saveResults(){
+  const payload={player:D.name,date:todayKey(),day:today(),skills:D.skills,reading:{level:D.reading.level,tricky:D.reading.tricky,last:D.reading.history.slice(-3)},speech:D.speech,typing:D.typing,dayStars:D.dayStars,streak:D.streak,report:reportText()};
+  try{localStorage.setItem('cq-last-report',JSON.stringify(payload))}catch(e){}
+  try{const db=await (window.claude&&window.claude.use?window.claude.use('db'):Promise.resolve(null));if(db)await db.collection('days').add(payload)}catch(e){}
+}
+
+// ---------- report & parent dashboard ----------
+function lvName(key){const s=sk(key);const L=SKILLS[key].levels;return 'L'+(s.level+1)+'/'+L.length+' · '+L[Math.min(s.level,L.length-1)].n}
+function reportText(){
+  const t=today();const acc=t.items?Math.round(100*t.correct/t.items):0;
+  const lines=['Camila\'s Quest report · '+new Date().toLocaleString(),'Day stars '+D.dayStars+' · streak '+D.streak+' · coins '+D.coins,'Today: '+t.done.length+' of 6 quests, '+t.items+' answers, '+acc+'% right, about '+Math.round(t.secs/60)+' min of answering'];
+  QUESTS.forEach(q=>{if(t.summaries&&t.summaries[q.key])lines.push('  '+q.em+' '+q.name+': '+t.summaries[q.key])});
+  lines.push('','Math levels:');SKILL_ORDER.forEach(k=>lines.push('  '+SKILLS[k].name+': '+lvName(k)+(levelAcc(k,sk(k).level)!==null?' · '+levelAcc(k,sk(k).level)+'% at this level':'')+' · mastered '+sk(k).mastered.length));
+  lines.push('Word Work level: '+WORDLV[Math.min(sk('words').level,WORDLV.length-1)].n,'Stories level: '+(D.reading.level+2)+'th-grade-ish · read '+D.reading.history.filter(h=>h.title).length,'Echo Stage level: '+SPEECHLV[Math.min(sk('speech').level,SPEECHLV.length-1)].n,'Typing level: '+TYPELV[Math.min(sk('typing').level,TYPELV.length-1)].n);
+  const C=D.checks||[];if(C.length){const c=C[C.length-1];lines.push('Latest weekly check ('+c.date+'): math '+c.math.pct+'%, words '+c.words.pct+'%'+(c.read.wpm?', reading '+c.read.wpm+' wpm':'')+', story questions '+c.read.comp+'/3'+(C.length>1?' (first check: math '+C[0].math.pct+'%, words '+C[0].words.pct+'%'+(C[0].read.wpm?', '+C[0].read.wpm+' wpm':'')+')':''))}
+  const tr=Object.keys(D.reading.tricky).filter(w=>D.reading.tricky[w]>0);if(tr.length)lines.push('Words to practice: '+tr.join(', '));
+  const misses=t.log.filter(l=>l.m==='math'&&!l.ok).slice(0,12).map(l=>l.q+' (said '+l.given+', answer '+l.a+')');if(misses.length)lines.push('','Math misses today:',...misses.map(m=>'  '+m));
+  return lines.join('\n');
+}
+function parentGate(){
+  render('<h2>Grown-ups</h2><p class="muted">Enter the code (hint: the year Camila was born).</p><div class="row"><input type="password" id="code" inputmode="numeric" placeholder="code"><button class="btn" id="go">Open</button><button class="btn ghost" id="back">Back</button></div><p class="feedback" id="fb"></p>');
+  $('go').onclick=()=>{if($('code').value===(D.settings.parentCode||'2013'))parentPanel();else $('fb').textContent='Not that one.'};$('back').onclick=home;$('code').onkeydown=e=>{if(e.key==='Enter')$('go').click()};
+}
+function parentPanel(tab){
+  tab=tab||'today';const t=today();
+  const tabs=[['today','Today'],['analytics','Progress'],['skills','Skills'],['history','History'],['prizes','Prizes'],['settings','Settings'],['report','Report']];
+  let body='';
+  if(tab==='today'){const acc=t.items?Math.round(100*t.correct/t.items):0;body='<p><b>'+t.done.length+' of 6</b> quests · '+t.items+' answers · '+acc+'% right · ~'+Math.round(t.secs/60)+' min answering · '+t.breaks+' breaks</p><table><tr><th>Quest</th><th>Result</th></tr>'+QUESTS.map(q=>'<tr><td>'+q.em+' '+q.name+'</td><td>'+esc((t.summaries||{})[q.key]||(t.done.includes(q.key)?'done':'—'))+'</td></tr>').join('')+'</table><h3>Misses today</h3>'+(t.log.filter(l=>!l.ok).length?'<ul style="margin:0;padding-left:20px;font-size:1rem">'+t.log.filter(l=>!l.ok).map(l=>'<li>'+esc(l.m==='math'||l.m==='sparks'?l.q+' → she said '+l.given+' (answer '+l.a+')':l.m==='words'?'word: '+l.w+(l.heard?' (heard "'+l.heard+'")':''):l.m==='speech'?'speech: '+l.t:l.m==='typing'?'typed "'+l.typed+'" for '+l.t:JSON.stringify(l))+'</li>').join('')+'</ul>':'<p class="muted">None yet.</p>')}
+  if(tab==='skills'){body='<table><tr><th>Skill</th><th>Where she is</th><th>Set level</th></tr>'+SKILL_ORDER.map(k=>'<tr><td>'+SKILLS[k].em+' '+SKILLS[k].name+'</td><td>'+esc(lvName(k))+(levelAcc(k,sk(k).level)!==null?'<br><span class="muted">'+levelAcc(k,sk(k).level)+'% right at this level · mastered '+sk(k).mastered.length+'</span>':'')+(skillOpen(k)?'':'<br><span class="muted">locked until basics are ready</span>')+'</td><td><select data-k="'+k+'" class="setlv">'+SKILLS[k].levels.map((L,i)=>'<option value="'+i+'" '+(i===sk(k).level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr>').join('')+'<tr><td>🔤 Word Work</td><td>'+WORDLV[Math.min(sk('words').level,WORDLV.length-1)].n+'</td><td><select data-k="words" class="setlv">'+WORDLV.map((L,i)=>'<option value="'+i+'" '+(i===sk('words').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr><tr><td>📖 Stories</td><td>level '+(D.reading.level+1)+' of 5 · '+D.reading.history.filter(h=>h.title).length+' read</td><td><select id="setStory">'+[0,1,2,3,4].map(i=>'<option value="'+i+'" '+(i===D.reading.level?'selected':'')+'>'+(i+1)+' (~grade '+(i+2)+')</option>').join('')+'</select></td></tr><tr><td>🎤 Echo Stage</td><td>'+SPEECHLV[Math.min(sk('speech').level,SPEECHLV.length-1)].n+'</td><td><select data-k="speech" class="setlv">'+SPEECHLV.map((L,i)=>'<option value="'+i+'" '+(i===sk('speech').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr><tr><td>⌨️ Typing</td><td>'+TYPELV[Math.min(sk('typing').level,TYPELV.length-1)].n+'</td><td><select data-k="typing" class="setlv">'+TYPELV.map((L,i)=>'<option value="'+i+'" '+(i===sk('typing').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr></table><p class="muted" style="font-size:.95rem">Levels move up on their own when she gets 5 of the last 6 right. Only change them by hand if a level is clearly wrong for her.</p><h3>Words to practice</h3><p>'+(Object.keys(D.reading.tricky).filter(w=>D.reading.tricky[w]>0).map(w=>'<span class="chip bad">'+w+'</span>').join('')||'<span class="muted">none</span>')+'</p><h3>Recent stories</h3>'+(D.reading.history.filter(h=>h.title).slice(-5).reverse().map(h=>'<p style="font-size:1rem">'+h.date+' · <b>'+esc(h.title)+'</b> · '+h.comp+'/3 questions'+(h.acc!==null&&h.acc!==undefined?' · '+h.acc+'% words':'')+(h.retell&&h.retell.hits!==undefined?' · retell '+h.retell.hits+'/'+h.retell.of+' key ideas':'')+'</p>').join('')||'<p class="muted">none yet</p>')}
+  if(tab==='analytics'){body=analyticsHTML()}
+  if(tab==='history'){const keys=Object.keys(D.days).sort().reverse().slice(0,21);body='<table><tr><th>Day</th><th>Star</th><th>Quests</th><th>Answers</th><th>Right</th></tr>'+keys.map(k=>{const d=D.days[k];return '<tr><td>'+k+'</td><td>'+(d.star?'⭐':'')+'</td><td>'+d.done.length+'/6</td><td>'+d.items+'</td><td>'+(d.items?Math.round(100*d.correct/d.items)+'%':'')+'</td></tr>'}).join('')+'</table>'+badgesHTML()}
+  if(tab==='prizes'){body='<p class="muted" style="font-size:.95rem">A prize is earned by finishing whole days (a day star = all six quests). Each prize counts from the day it was added, so every prize is earned on its own.</p>'+D.prizes.map((p,i)=>'<div class="box"><div class="row" style="justify-content:space-between"><b>'+(p.earned?'✅ ':'🔒 ')+esc(p.name)+'</b><span class="muted">'+(p.earned?'earned '+p.earned:Math.min(p.need,D.dayStars-p.start)+' of '+p.need+' days')+'</span></div><div class="row"><button class="btn ghost sm rmP" data-i="'+i+'">Remove</button>'+(p.earned?'':'<button class="btn ghost sm doneP" data-i="'+i+'">Mark given</button>')+'</div></div>').join('')+'<div class="box gold"><b>Add a prize</b><div class="row"><input type="text" id="pName" class="wide" placeholder="e.g. 🎧 Headphones" style="width:14em"><label>after <input type="number" id="pNeed" min="1" max="120" value="30"> days</label><button class="btn sm" id="addP">Add</button></div><p class="muted" style="font-size:.9rem">Tip: make each new prize a little harder than the last.</p></div>'}
+  if(tab==='settings'){body='<div class="row"><label>Math questions per day <select id="sItems">'+[6,8,10,12].map(n=>'<option '+(n===(D.settings.items||10)?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Break length <select id="sBreak">'+[30,45,60,90].map(n=>'<option value="'+n+'" '+(n===(D.settings.breakSecs||45)?'selected':'')+'>'+n+' sec</option>').join('')+'</select></label></div><div class="row"><label>Her name <input type="text" id="sName" value="'+esc(D.name)+'"></label><label>Avatar <select id="sAv">'+['🦄','🐱','🦊','🐼','🦋','🌟','🐬','🦩'].map(a=>'<option '+(a===D.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label>Grown-up code <input type="text" id="sCode" value="'+esc(D.settings.parentCode||'2013')+'"></label></div><div class="row"><button class="btn sm" id="saveS">Save settings</button></div><hr style="border:0;border-top:1px solid var(--line)"><div class="row"><button class="btn ghost sm" id="resetDay">Reset today\'s quests</button><button class="btn ghost sm" id="exportB">Export everything (copy)</button><button class="btn ghost sm" id="wipe">Start over completely</button></div><p class="muted" style="font-size:.9rem">Progress lives on this iPad in the browser. Export before switching devices, then paste into the Import box on the new one.</p><div class="row"><input type="text" id="importT" class="wide" placeholder="paste export here"><button class="btn ghost sm" id="importB">Import</button></div><p class="muted" style="font-size:.9rem">Microphone: '+(MIC==='yes'?'working':MIC==='no'?'not available on this page (use the hosted link in Safari and tap Allow)':'not tested yet')+'. Version '+VERSION+'.</p>'}
+  if(tab==='report'){const txt=reportText();body='<textarea id="rep" style="width:100%;min-height:260px;font:inherit;font-size:.95rem;border-radius:12px;border:2px solid var(--line);padding:10px;background:var(--card);color:var(--fg)">'+esc(txt)+'</textarea><div class="row"><button class="btn sm" id="copyR">Copy</button><a class="btn sm" style="text-decoration:none;display:inline-block" id="mailR" href="mailto:bahmedov82@gmail.com?subject='+encodeURIComponent('Camila\'s Quest · '+todayKey())+'&body='+encodeURIComponent(txt)+'">✉️ Email to Dad</a></div>'}
+  render('<div class="row" style="justify-content:space-between"><h2>Grown-ups</h2><button class="btn ghost sm" id="back">Back to Camila</button></div><div class="row">'+tabs.map(([k,n])=>'<button class="btn sm '+(k===tab?'':'ghost')+' ptab" data-t="'+k+'">'+n+'</button>').join('')+'</div>'+body);
+  $('back').onclick=home;document.querySelectorAll('.ptab').forEach(b=>b.onclick=()=>parentPanel(b.dataset.t));
+  document.querySelectorAll('.setlv').forEach(s=>s.onchange=()=>{const k=s.dataset.k;sk(k).level=+s.value;save();parentPanel('skills')});
+  if($('setStory'))$('setStory').onchange=()=>{D.reading.level=+$('setStory').value;save();parentPanel('skills')};
+  document.querySelectorAll('.rmP').forEach(b=>b.onclick=()=>{D.prizes.splice(+b.dataset.i,1);save();hud();parentPanel('prizes')});
+  document.querySelectorAll('.doneP').forEach(b=>b.onclick=()=>{D.prizes[+b.dataset.i].earned=todayKey();save();hud();parentPanel('prizes')});
+  if($('addP'))$('addP').onclick=()=>{const n=$('pName').value.trim();if(!n)return;D.prizes.push({name:n,need:Math.max(1,parseInt($('pNeed').value||'30',10)),start:D.dayStars,earned:null,added:new Date().toISOString()});save();hud();parentPanel('prizes')};
+  if($('saveS'))$('saveS').onclick=()=>{D.settings.items=+$('sItems').value;D.settings.breakSecs=+$('sBreak').value;D.name=$('sName').value.trim()||D.name;D.avatar=$('sAv').value;D.settings.parentCode=$('sCode').value.trim()||'2013';save();parentPanel('settings')};
+  if($('resetDay'))$('resetDay').onclick=()=>{if(confirm('Reset today\'s quests? Skill levels are kept.')){delete D.days[todayKey()];save();hud();parentPanel('today')}};
+  if($('wipe'))$('wipe').onclick=()=>{if(confirm('Erase ALL progress, levels, and prizes on this device?')){localStorage.removeItem(KEY);location.reload()}};
+  if($('exportB'))$('exportB').onclick=async()=>{const s=JSON.stringify(D);try{await navigator.clipboard.writeText(s);$('exportB').textContent='Copied ✓'}catch(e){prompt('Copy this:',s)}};
+  if($('importB'))$('importB').onclick=()=>{try{const o=JSON.parse($('importT').value);if(o&&o.skills){localStorage.setItem(KEY,JSON.stringify(o));location.reload()}}catch(e){alert('That did not look like an export.')}};
+  if($('copyR'))$('copyR').onclick=async()=>{try{await navigator.clipboard.writeText($('rep').value);$('copyR').textContent='Copied ✓'}catch(e){$('rep').select()}};
+}
+
+// ---------- first run & boot ----------
+function welcome(){
+  render('<div class="stars">🏝️</div><h1 class="center">Welcome to your Quest, Camila!</h1><p class="center">Every day has six short quests: brain sparks, math, words, a story, speaking, and typing. Finish all six and you earn a day star. Day stars earn real prizes.</p><p class="center">Pick your character:</p><div class="row" style="justify-content:center" id="av">'+['🦄','🐱','🦊','🐼','🦋','🌟','🐬','🦩'].map(a=>'<button class="opt" style="font-size:2.4rem;min-height:0;padding:12px 16px" data-a="'+a+'">'+a+'</button>').join('')+'</div><div class="row" style="justify-content:center"><button class="btn good" id="go" style="font-size:1.5rem">Let\'s go!</button></div>');
+  speak('Welcome to your quest, Camila! Every day has six short quests. Finish all six and you earn a day star. Day stars earn real prizes. Pick your character!');
+  document.querySelectorAll('#av .opt').forEach(b=>b.onclick=()=>{document.querySelectorAll('#av .opt').forEach(x=>x.classList.remove('right'));b.classList.add('right');D.avatar=b.dataset.a;save()});
+  $('go').onclick=()=>{D.welcomed=true;save();home()};
+}
+$('ver').textContent='v'+VERSION;
+$('musicBtn').onclick=()=>setMusic(!MUSIC);setMusic(MUSIC);
+$('parentLink').onclick=parentGate;
+hud();
+if(location.hash==='#debug')window.__cq={D,run:k=>QUESTS.find(q=>q.key===k).run(home),home,parentPanel,save};
+if(D.welcomed)home();else welcome();
+})();
+</script>
+</body>
+</html>
