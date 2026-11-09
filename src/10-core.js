@@ -31,11 +31,14 @@ function logItem(mod,rec){const t=today();t.items++;if(rec.ok)t.correct++;if(rec
 let MUSIC=!!D.music;
 function setMusic(on){MUSIC=on;D.music=on;save();const b=$('musicBtn');if(b){b.textContent='🎵 My music: '+(on?'on':'off');b.setAttribute('aria-pressed',on?'true':'false');b.style.borderColor=on?'var(--accent)':''}if(on){try{speechSynthesis.cancel()}catch(e){}}}
 let VOICE=null;
-function pickVoice(){try{const vs=speechSynthesis.getVoices();if(!vs.length)return;const pref=['Samantha','Karen','Ava','Allison','Zoe','Google US English','Microsoft Aria','Microsoft Jenny','Moira','Tessa','Fiona'];for(const n of pref){const v=vs.find(x=>x.name.includes(n)&&x.lang.startsWith('en'));if(v){VOICE=v;return}}VOICE=vs.find(x=>x.lang==='en-US')||vs.find(x=>x.lang.startsWith('en'))||vs[0]}catch(e){}}
+// Voice: the most natural English voice the device has. iPad: Enhanced/Premium voices (downloadable in Settings) beat the compact defaults.
+function voiceScore(v){if(!v.lang||!/^en/i.test(v.lang))return -1;let s=0;const n=v.name;if(/premium/i.test(n))s+=50;if(/enhanced/i.test(n))s+=40;if(/natural|neural|online/i.test(n))s+=35;if(/siri/i.test(n))s+=30;['Ava','Zoe','Allison','Samantha','Nicky','Susan','Joelle','Karen','Moira','Tessa','Google US English','Aria','Jenny','Michelle','Emma'].forEach((nm,i)=>{if(n.includes(nm))s+=20-i});if(/en-US/i.test(v.lang))s+=5;if(/compact/i.test(n))s-=20;if(/fred|zarvox|trinoids|whisper|bubbles|bad news|cellos|boing|organ|bells|hysterical|albert|jester|good news|wobble|superstar|grandma|grandpa|rocko|shelley|eddy|flo|reed|sandy|junior|ralph|kathy|bahh|deranged/i.test(n))s-=100;return s}
+function englishVoices(){try{return speechSynthesis.getVoices().filter(v=>voiceScore(v)>=0).sort((a,b)=>voiceScore(b)-voiceScore(a))}catch(e){return []}}
+function pickVoice(){try{const vs=englishVoices();if(!vs.length)return;if(D.voiceName){const v=vs.find(x=>x.name===D.voiceName);if(v){VOICE=v;return}}VOICE=vs[0]}catch(e){}}
 try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
-function speak(t,opts){try{opts=opts||{};if(MUSIC&&!opts.force)return;if(!('speechSynthesis'in window))return;if(!opts.queue)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/[*_#]/g,''));u.rate=opts.rate||1.0;u.pitch=opts.pitch||1.2;u.volume=1;if(VOICE)u.voice=VOICE;speechSynthesis.speak(u)}catch(e){}}
+function speak(t,opts){try{opts=opts||{};if(MUSIC&&!opts.force)return;if(!('speechSynthesis'in window))return;if(!opts.queue)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/[*_#]/g,''));u.rate=opts.rate||0.97;u.pitch=opts.pitch||1.0;u.volume=1;if(VOICE)u.voice=VOICE;speechSynthesis.speak(u)}catch(e){}}
 const CHEERS=['Yes! You got it!','Boom! Nailed it!','That is right, Camila!','Whoa, great thinking!','Look at you go!','You are on fire!','Amazing, Camila!','Yes yes yes!','Super star!','High five!','Your brain is growing!','That is how a boss does it!'];
-const NOTYET=['Not yet, and that is okay. Let\'s look at it together.','So close! Let\'s see how it works.','Good try, Camila. Watch this.','Tricky one! Here is the picture.','Not yet means you are on your way.'];
+const NOTYET=['Not yet, and that is okay. Let\'s look at it together.','So close! Let\'s see how it works.','Good try, Camila. Let me show you.','Tricky one! Let\'s work it out together.','Not yet means you are on your way. Watch this.'];
 
 // ---------- microphone ----------
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;

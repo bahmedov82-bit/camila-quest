@@ -12,13 +12,15 @@ function showItem(item,meta,onDone){
     if(answered)return;answered=true;
     const v=b.dataset.v;const ok=String(v)===String(item.answer);const secs=Math.round((performance.now()-t0)/100)/10;
     if(ok){b.classList.add('right');const c=pick(CHEERS);$('fb').textContent=c+(secs<5&&!hinted?' ⚡':'');speak(c);coins(2)}
-    else{b.classList.add('wrong');$('fb').textContent=pick(NOTYET);speak($('fb').textContent);document.querySelectorAll('.opt').forEach(x=>{if(String(x.dataset.v)===String(item.answer))x.classList.add('right')});$('vis').innerHTML=item.visual();$('show').hidden=true}
+    else{b.classList.add('wrong');$('fb').textContent=pick(NOTYET);speak($('fb').textContent,{force:true});document.querySelectorAll('.opt').forEach(x=>{if(String(x.dataset.v)===String(item.answer))x.classList.add('right')});$('vis').innerHTML=item.visual();$('show').hidden=true}
     onDone(ok,secs,hinted,v);
   });
 }
 // After a miss: she does the work, then the SAME question comes back once.
 function missFlow(item,meta,after){
-  nextBtn(()=>teachScreen(item,()=>{const it=Object.assign({},item,{options:shuffle(item.options)});showItem(it,Object.assign({},meta,{head:meta.head+' · try again'}),(ok2)=>{if(ok2){coins(1)}nextBtn(after)})}),'Show me how ➜','pink');
+  let opened=false;const open=()=>{if(opened)return;opened=true;teachScreen(item,()=>{const it=Object.assign({},item,{options:shuffle(item.options)});showItem(it,Object.assign({},meta,{head:meta.head+' · try again'}),(ok2)=>{if(ok2){coins(1)}nextBtn(after)})})};
+  nextBtn(open,'Show me how ➜','pink');
+  const btn=$('nextBtn');setTimeout(()=>{if(!opened&&btn&&btn.isConnected)open()},3200);
 }
 function teachScreen(item,done){
   const T=item.teach||{};TEACH_Q=item.q;
