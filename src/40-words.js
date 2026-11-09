@@ -87,14 +87,26 @@ function readWord(w,syl,tip,dis,meta,cb){
 // microphone warm-up screen (asks permission once per visit)
 function micIntro(title,text,next){
   pauseMusicGate(()=>{
-    render('<div class="stars">🎙️</div><h2 class="center">'+title+'</h2><p class="center">'+text+'</p>'+(MIC==='yes'?'':'<p class="center muted">First, tap the button and say <b>hello</b> so the microphone wakes up. If your iPad asks, tap <b>Allow</b>.</p>')+'<div class="row" style="justify-content:center">'+(MIC==='yes'?'<button class="btn good" id="go">Start</button>':'<button class="btn pink" id="mic" style="font-size:1.4rem">🎙️ Say hello</button><button class="btn ghost sm" id="skip">No microphone today</button>')+'</div><p class="feedback" id="fb"></p>');
+    if(MIC==='no'&&SR)MIC='unknown'; // give it another try each time; a flaky network earlier should not lock her out
+    render('<div class="stars">🎙️</div><h2 class="center">'+title+'</h2><p class="center">'+text+'</p>'+(MIC==='yes'?'':MIC==='no'?'<p class="center">'+micWhy()+'</p>':'<p class="center muted">First, tap the button and say <b>hello</b> so the microphone wakes up. If your iPad asks, tap <b>Allow</b>.</p>')+'<div class="row" style="justify-content:center">'+(MIC==='yes'?'<button class="btn good" id="go">Start</button>':MIC==='no'?'<button class="btn good" id="go">Okay, start without it</button>':'<button class="btn pink" id="mic" style="font-size:1.4rem">🎙️ Say hello</button><button class="btn ghost sm" id="skip">No microphone today</button>')+'</div><p class="feedback" id="fb"></p>');
     speak(text,{force:true});
     let started=false;const go=()=>{if(started)return;started=true;next()};
     if($('go'))$('go').onclick=go;
     if($('mic'))$('mic').onclick=async()=>{if(started||!$('mic'))return;$('mic').disabled=true;$('fb').textContent='Listening…';const r=await listen(5000);if(!$('mic'))return;$('mic').disabled=false;
       if(r.text){MIC='yes';$('fb').textContent='I heard "'+r.text+'". Your microphone works!';speak('I heard you! Your microphone works. Let\'s go!');$('mic').hidden=true;$('skip').hidden=true;nextBtn(go,'Start')}
-      else if(MIC==='no'){$('fb').textContent='The microphone is not available here. You will listen and tap instead.';$('mic').hidden=true;$('skip').hidden=true;nextBtn(go,'Okay, start')}
+      else if(MIC==='no'){$('fb').innerHTML='The microphone is not available here. '+micWhy()+'<br><span class="muted" style="font-size:.9rem">You can listen and tap instead for now.</span>';$('mic').hidden=true;nextBtn(go,'Okay, start')}
       else{$('fb').textContent='I did not hear anything. Tap and say hello a little louder.'}};
     if($('skip'))$('skip').onclick=()=>{if(started)return;MIC='no';go()};
   });
 }
+
+// why the microphone is off, in words a parent can act on
+function micWhy(){const standalone=(navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);const inFrame=window.top!==window.self;const ios=/iPad|iPhone|Macintosh/.test(navigator.userAgent)&&'ontouchend' in document;
+  if(inFrame)return 'This copy is inside another page (the Claude link). Open the GitHub link in Safari instead: bahmedov82-bit.github.io/camila-quest';
+  if(standalone)return 'This is the Home Screen icon. iPads only allow the speech recognizer inside Safari itself. Open Safari and type bahmedov82-bit.github.io/camila-quest, then use it there (you can bookmark it).';
+  if(!SR)return 'This browser has no speech recognizer. On an iPad use Safari; on a computer use Chrome or Edge.';
+  if(!window.isSecureContext)return 'This page is not on a secure (https) address.';
+  if(MICERR==='not-allowed'||MICERR==='service-not-allowed')return ios?'Permission was denied. Fix: Settings → Safari → Microphone → Allow. Also Settings → Siri → turn on Dictation, then reload this page.':'Permission was denied. Click the lock icon in the address bar and allow the microphone, then reload.';
+  if(MICERR==='audio-capture')return 'No microphone was found or another app is using it. Close other apps and reload.';
+  if(MICERR==='network')return ios?'The speech service could not be reached. Check Wi-Fi, and make sure Settings → Siri → Dictation is turned on, then reload.':'The speech service could not be reached. Check the internet connection and reload.';
+  return 'Nothing was heard. Check Settings → Safari → Microphone, and Settings → Siri → Dictation, then reload.'}

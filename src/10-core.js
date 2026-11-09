@@ -42,14 +42,14 @@ const NOTYET=['Not yet, and that is okay. Let\'s look at it together.','So close
 
 // ---------- microphone ----------
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
-let MIC=SR?'unknown':'no';let MICFAIL=0;
+let MIC=SR?'unknown':'no';let MICFAIL=0;let MICERR='';
 function listen(ms){return new Promise(res=>{
   if(!SR){MIC='no';return res({err:'nosr'})}
   let r;try{r=new SR()}catch(e){MIC='no';return res({err:'nosr'})}
   r.lang='en-US';r.interimResults=false;r.maxAlternatives=5;r.continuous=false;
   let done=false;const finish=v=>{if(done)return;done=true;try{r.stop()}catch(e){}res(v)};
   r.onresult=e=>{MIC='yes';const alts=[];for(const a of e.results[0])alts.push(a.transcript);finish({text:alts[0]||'',alts})};
-  r.onerror=e=>{if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture')MIC='no';if(e.error==='network'){MICFAIL++;if(MICFAIL>=2&&MIC!=='yes')MIC='no'}finish({err:e.error})};
+  r.onerror=e=>{MICERR=e.error||'';if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture')MIC='no';if(e.error==='network'){MICFAIL++;if(MICFAIL>=3&&MIC!=='yes')MIC='no'}finish({err:e.error})};
   r.onend=()=>finish({err:'silence'});
   try{r.start()}catch(e){MIC='no';finish({err:'start'})}
   setTimeout(()=>finish({err:'timeout'}),ms||6000);
