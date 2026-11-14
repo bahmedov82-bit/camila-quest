@@ -94,6 +94,8 @@ const BADGES=[
  {id:'voice',em:'🎤',name:'Clear Speaker',test:()=>D.speech.level>=3},
  {id:'typist',em:'⌨️',name:'Typist',test:()=>D.typing.level>=3},
  {id:'coins',em:'💰',name:'500 Coins',test:()=>D.coins>=500},
+ {id:'boss1',em:'⚔️',name:'First Boss Down',test:()=>(D.decks||[]).some(d=>d.wins>0)},
+ {id:'deckm',em:'🏆',name:'Deck Master',test:()=>(D.decks||[]).some(d=>deckMastery(d)>=100)},
 ];
 function checkBadges(){const fresh=[];BADGES.forEach(b=>{if(!D.badges.includes(b.id)&&b.test()){D.badges.push(b.id);fresh.push(b)}});save();return fresh}
 function badgesHTML(){return '<div class="row" style="justify-content:center;gap:6px">'+BADGES.map(b=>'<div class="badge '+(D.badges.includes(b.id)?'':'off')+'"><span class="em">'+b.em+'</span>'+b.name+'</div>').join('')+'</div>'}

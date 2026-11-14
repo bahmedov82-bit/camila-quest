@@ -68,7 +68,7 @@ p{margin:0}
 .cell .dot{width:22px;height:22px}
 .group{display:flex;gap:4px;padding:6px;border:2px dashed var(--muted);border-radius:10px;flex-wrap:wrap;max-width:140px}
 .rod{width:14px;height:90px;background:var(--accent2);border-radius:4px;display:inline-block}
-.one{width:16px;height:16px;background:var(--coin);border-radius:3px;display:inline-block}
+.unit{width:16px;height:16px;background:var(--coin);border-radius:3px;display:inline-block}
 .bar{height:16px;background:var(--line);border-radius:999px;overflow:hidden}
 .bar>div{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .3s}
 .feedback{font-family:var(--f-display);font-size:1.5rem;text-align:center;min-height:1.8em}
@@ -124,7 +124,7 @@ th{font-family:var(--f-display);color:var(--muted);font-weight:600}
 <script>
 (function(){
 'use strict';
-const VERSION='1.3';
+const VERSION='1.4';
 // ---------- helpers ----------
 const $=id=>document.getElementById(id);
 const screen=$('screen');
@@ -221,6 +221,8 @@ const BADGES=[
  {id:'voice',em:'🎤',name:'Clear Speaker',test:()=>D.speech.level>=3},
  {id:'typist',em:'⌨️',name:'Typist',test:()=>D.typing.level>=3},
  {id:'coins',em:'💰',name:'500 Coins',test:()=>D.coins>=500},
+ {id:'boss1',em:'⚔️',name:'First Boss Down',test:()=>(D.decks||[]).some(d=>d.wins>0)},
+ {id:'deckm',em:'🏆',name:'Deck Master',test:()=>(D.decks||[]).some(d=>deckMastery(d)>=100)},
 ];
 function checkBadges(){const fresh=[];BADGES.forEach(b=>{if(!D.badges.includes(b.id)&&b.test()){D.badges.push(b.id);fresh.push(b)}});save();return fresh}
 function badgesHTML(){return '<div class="row" style="justify-content:center;gap:6px">'+BADGES.map(b=>'<div class="badge '+(D.badges.includes(b.id)?'':'off')+'"><span class="em">'+b.em+'</span>'+b.name+'</div>').join('')+'</div>'}
@@ -255,7 +257,7 @@ function mc(q,answer,distract,visual,spoken,how){
 const near=[a=>a+1,a=>a-1,a=>a+2,a=>a-2,a=>a+10,a=>a-10,a=>a+3];
 const dots=(n,cls)=>'<div class="visual">'+Array.from({length:n},()=>'<span class="dot '+(cls||'')+'"></span>').join('')+'</div>';
 const tenframe=(n,m)=>{let h='<div class="visual"><div class="tenframe">';for(let i=0;i<10;i++){h+='<div class="cell">'+(i<n?'<span class="dot"></span>':(i<n+(m||0)?'<span class="dot b"></span>':''))+'</div>'}return h+'</div></div>'};
-const blocks=(n,hl)=>{const t=Math.floor(n/10),o=n%10;return '<div class="visual" style="gap:16px;align-items:flex-end"><div style="display:flex;gap:4px">'+Array.from({length:t},()=>'<span class="rod"></span>').join('')+'</div><div style="display:grid;grid-template-columns:repeat(5,16px);gap:3px">'+Array.from({length:o},(_,i)=>'<span class="one" style="'+(hl&&i>=o-hl?'background:var(--accent)':'')+'"></span>').join('')+'</div></div><p class="center muted" style="font-size:1rem">'+t+' tens and '+o+' ones</p>'};
+const blocks=(n,hl)=>{const t=Math.floor(n/10),o=n%10;return '<div class="visual" style="gap:16px;align-items:flex-end"><div style="display:flex;gap:4px">'+Array.from({length:t},()=>'<span class="rod"></span>').join('')+'</div><div style="display:grid;grid-template-columns:repeat(5,16px);gap:3px">'+Array.from({length:o},(_,i)=>'<span class="unit" style="'+(hl&&i>=o-hl?'background:var(--accent)':'')+'"></span>').join('')+'</div></div><p class="center muted" style="font-size:1rem">'+t+' tens and '+o+' ones</p>'};
 const groups=(g,n)=>'<div class="visual">'+Array.from({length:g},()=>'<div class="group">'+Array.from({length:n},()=>'<span class="dot"></span>').join('')+'</div>').join('')+'</div>';
 const groupsTot=(g,n)=>'<div class="visual" style="gap:10px">'+Array.from({length:g},(_,i)=>'<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div class="group">'+Array.from({length:n},()=>'<span class="dot" style="width:12px;height:12px"></span>').join('')+'</div><span style="font-weight:700">'+(i+1)*n+'</span></div>').join('')+'</div>';
 const shape=(parts,on)=>{let h='<div class="visual"><div class="shape" style="grid-template-columns:repeat('+Math.min(parts,4)+',34px)">';for(let i=0;i<parts;i++)h+='<i class="'+(i<on?'on':'')+'"></i>';return h+'</div></div>'};
@@ -998,6 +1000,91 @@ function checkQuest(done){
   }
   micIntro(res.n===1?'Starting Line':'Weekly Check',res.n===1?'A short check to see where you are today. Same one every week, so you can watch yourself grow.':'Same check as last week. Let\'s see how much you grew.',intro);
 }
+// ---------- Study Arena: boss battles built from her school study guides, one deck per subject ----------
+const SUBJECTS=[['math','🔢','Math'],['ela','📚','English / ELA'],['science','🔬','Science'],['history','🏛️','Social Studies'],['spanish','🌎','World Language'],['other','📝','Other']];
+const subjOf=id=>SUBJECTS.find(s=>s[0]===id)||SUBJECTS[5];
+// Parse a pasted study guide into cards. Accepts "term - definition", "term: definition", "Question? Answer",
+// "Q: ... / A: ..." on consecutive lines, or tab-separated. Returns [{q,a}].
+function parseGuide(text){const lines=String(text||'').split(/\r?\n/).map(l=>l.replace(/^\s*(\d+[.)]|[-*•])\s*/,'').trim()).filter(Boolean);const cards=[];let pendingQ=null;
+  for(const l of lines){let m;
+    if((m=l.match(/^(?:q|question)\s*[:.)-]\s*(.+)$/i))){pendingQ=m[1].trim();continue}
+    if((m=l.match(/^(?:a|answer)\s*[:.)-]\s*(.+)$/i))){if(pendingQ){cards.push({q:pendingQ,a:m[1].trim()});pendingQ=null}continue}
+    if(pendingQ&&!/[\t:–—]| - /.test(l)&&!/\?/.test(l)){cards.push({q:pendingQ,a:l});pendingQ=null;continue}
+    if((m=l.match(/^(.+?)\t+(.+)$/))){cards.push({q:m[1].trim(),a:m[2].trim()});continue}
+    if((m=l.match(/^(.+?\?)\s*(.+)$/))){cards.push({q:m[1].trim(),a:m[2].trim()});continue}
+    if((m=l.match(/^(.+?)\s+[-–—=]\s+(.+)$/))){cards.push({q:m[1].trim(),a:m[2].trim()});continue}
+    if((m=l.match(/^([^:]{1,80}):\s+(.+)$/))){cards.push({q:m[1].trim(),a:m[2].trim()});continue}
+    if(/\?$/.test(l)){pendingQ=l;continue}
+  }
+  return cards.filter(c=>c.q.length>1&&c.a.length>0&&c.q.length<300&&c.a.length<300)}
+function decks(){D.decks=D.decks||[];return D.decks}
+function addDeck(subject,title,cards){const d={id:'d'+Date.now().toString(36),subject,title:title||subjOf(subject)[2]+' study guide',cards:cards.map(c=>({q:c.q,a:c.a,box:0,seen:0,right:0,wrong:0})),created:todayKey(),due:todayKey(),wins:0,losses:0,best:null,history:[]};decks().push(d);save();return d}
+function deckMastery(d){if(!d.cards.length)return 0;return Math.round(100*d.cards.reduce((a,c)=>a+Math.min(c.box,3),0)/(3*d.cards.length))}
+function dueDecks(){const t=todayKey();return decks().filter(d=>d.due<=t&&deckMastery(d)<100)}
+function scheduleDeck(d,won){const m=deckMastery(d);const days=!won?1:m>=100?14:m>=70?7:m>=40?3:1;const n=new Date();n.setDate(n.getDate()+days);d.due=keyOf(n);save()}
+const isNumeric=s=>/^[\d.,$%\s/-]+$/.test(s);
+// distractors: other answers from the same deck (same "shape" where possible)
+function distractFor(d,card){const others=d.cards.filter(c=>c!==card&&norm(c.a)!==norm(card.a)).map(c=>c.a);const same=others.filter(a=>isNumeric(a)===isNumeric(card.a));const pool=shuffle([...new Set(same.length>=3?same:others)]);const out=pool.slice(0,3);while(out.length<3)out.push(isNumeric(card.a)?String(parseFloat(card.a.replace(/[^\d.-]/g,''))+out.length+1||'0'):['Not sure','None of these','All of these'][out.length]);return out}
+
+function arenaHome(){
+  const ds=decks();const due=dueDecks();
+  const list=ds.length?ds.map(d=>{const s=subjOf(d.subject);const m=deckMastery(d);const isDue=d.due<=todayKey();return '<button class="quest '+(m>=100?'done':isDue?'now':'')+'" data-id="'+d.id+'"><span class="em">'+s[1]+'</span><b>'+esc(d.title)+'</b><span class="sub">'+s[2]+' · '+d.cards.length+' cards · '+m+'% mastered'+(m>=100?' · 🏆':isDue?' · ready to battle':' · comes back '+d.due)+'</span><div class="bar" style="height:8px;margin-top:6px"><div style="width:'+m+'%"></div></div></button>'}).join(''):'<p class="muted">No study guides loaded yet. A grown-up can paste one in Grown-ups → School, or send it to Claude to load.</p>';
+  render('<div class="row" style="justify-content:space-between"><h2>⚔️ Study Arena</h2><button class="btn ghost sm" id="back">Back to the map</button></div><p>Each study guide is a boss. Hit it with right answers. Three hearts. Lose them all and the boss escapes.'+(due.length?' <b>'+due.length+' boss'+(due.length>1?'es':'')+' ready today.</b>':'')+'</p><div class="quests" id="decks">'+list+'</div>');
+  $('back').onclick=home;document.querySelectorAll('#decks .quest').forEach(b=>b.onclick=()=>deckMenu(ds.find(d=>d.id===b.dataset.id)));
+  speak('Study Arena! Pick a boss.');
+}
+function deckMenu(d){const s=subjOf(d.subject);const m=deckMastery(d);const weak=d.cards.filter(c=>c.wrong>c.right).length;
+  render('<div class="row" style="justify-content:space-between"><span class="muted">'+s[1]+' '+s[2]+'</span><button class="btn ghost sm" id="back">Back</button></div><h2>'+esc(d.title)+'</h2><p>'+d.cards.length+' cards · '+m+'% mastered · wins '+d.wins+' · escapes '+d.losses+(d.best!=null?' · best run: '+d.best+' hearts left':'')+(weak?' · '+weak+' tricky cards':'')+'</p><div class="opts"><button class="opt" id="study" style="font-size:1.3rem">📖 Study first<br><span class="muted" style="font-size:.9rem;font-weight:500">flip through the cards, hear them read</span></button><button class="opt" id="battle" style="font-size:1.3rem;border-color:var(--accent)">⚔️ Battle the boss<br><span class="muted" style="font-size:.9rem;font-weight:500">win coins, or lose your hearts</span></button></div>');
+  $('back').onclick=arenaHome;$('study').onclick=()=>studyCards(d,()=>deckMenu(d));$('battle').onclick=()=>battle(d);
+}
+function studyCards(d,done){let i=0;const order=shuffle(d.cards.map((_,k)=>k));
+  function show(){const c=d.cards[order[i]];let flipped=false;
+    render('<div class="row" style="justify-content:space-between"><span class="muted">📖 Study · card '+(i+1)+' of '+order.length+'</span><button class="btn ghost sm" id="quit">Done studying</button></div><button class="opt txt" id="card" style="min-height:200px;font-size:1.5rem;text-align:center"><span class="muted" style="font-size:.9rem;display:block">QUESTION · tap to flip</span>'+esc(c.q)+'</button><div class="row" style="justify-content:center"><button class="btn ghost" id="hear">🔊 Read it</button><button class="btn" id="next">Next card ➜</button></div>');
+    const read=()=>speak(flipped?c.a:c.q,{force:true,rate:.95});read();$('hear').onclick=read;
+    $('card').onclick=()=>{flipped=!flipped;$('card').innerHTML='<span class="muted" style="font-size:.9rem;display:block">'+(flipped?'ANSWER':'QUESTION')+' · tap to flip</span>'+esc(flipped?c.a:c.q);$('card').style.background=flipped?'var(--goodbg)':'';read()};
+    $('next').onclick=()=>{i++;if(i>=order.length)return done();show()};$('quit').onclick=done}
+  show();
+}
+function battle(d){
+  const s=subjOf(d.subject);let hearts=3,streak=0,hits=0,t0=Date.now();const missed=new Set();
+  // queue: cards needing the most work first; a card leaves the battle once answered right twice this run
+  const need={};d.cards.forEach((c,k)=>need[k]=2);
+  let queue=shuffle(d.cards.map((_,k)=>k)).sort((a,b)=>(d.cards[a].box-d.cards[b].box));
+  const total=d.cards.length*2;const bossHP=()=>Object.values(need).reduce((a,b)=>a+b,0);
+  const hud_=()=>'<div class="row" style="justify-content:space-between"><span>'+'❤️'.repeat(hearts)+'🖤'.repeat(3-hearts)+'</span><span class="muted">'+s[1]+' '+esc(d.title)+'</span><span>'+(streak>=3?'🔥 x'+streak+' ':'')+'</span></div><div class="row" style="gap:8px;align-items:center"><span style="font-size:1.6rem">👹</span><div class="bar" style="flex:1;height:18px"><div style="width:'+Math.round(100*bossHP()/total)+'%;background:linear-gradient(90deg,#9b5cff,var(--accent))"></div></div><span class="muted" style="font-size:.9rem">'+bossHP()+'</span></div>';
+  function next(){
+    if(bossHP()<=0)return win();
+    if(!queue.length)queue=shuffle(Object.keys(need).filter(k=>need[k]>0).map(Number));
+    const k=queue.shift();const c=d.cards[k];const typed=c.box>=2&&c.a.length<=14&&!/\s.*\s/.test(c.a);
+    const opts=typed?null:shuffle([c.a].concat(distractFor(d,c)));
+    render(hud_()+'<p class="prompt small" style="margin-top:8px">'+esc(c.q)+'</p>'+(typed?'<p class="center muted" style="font-size:.95rem">Type the answer</p><div class="row" style="justify-content:center"><input type="text" id="typed" class="wide" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-size:1.4rem;text-align:center"><button class="btn good" id="ok">Attack!</button></div>':'<div class="opts one">'+opts.map(o=>'<button class="opt txt" data-v="'+esc(o)+'">'+esc(o)+'</button>').join('')+'</div>')+'<p class="feedback" id="fb"></p><div class="row" style="justify-content:center"><button class="speak" id="sp" aria-label="Read aloud">🔊</button></div>');
+    $('sp').onclick=()=>speak(c.q+(opts?'. '+opts.join('. '):''),{force:true});speak(c.q,{force:true});
+    const answer=(given)=>{const ok=norm(given)===norm(c.a)||(typed&&soundsLike(given,c.a)&&norm(given).length>=3);c.seen++;
+      if(ok){c.right++;need[k]=Math.max(0,need[k]-1);streak++;hits++;const dmg=streak>=5?3:streak>=3?2:1;if(dmg>1)need[k]=Math.max(0,need[k]-(dmg-1));if(need[k]===0)c.box=Math.min(3,c.box+1);
+        $('fb').textContent=pick(['Hit!','Direct hit!','Boom!','Critical hit!','The boss stumbles!'])+(dmg>1?' x'+dmg+' combo!':'');speak($('fb').textContent);coins(1);save();return nextBtn(next,'Next ➜')}
+      c.wrong++;c.box=Math.max(0,c.box-1);streak=0;hearts--;missed.add(k);queue.splice(Math.min(3,queue.length),0,k);need[k]=2;save();
+      $('fb').innerHTML='Ouch! You lost a heart. The answer is: <b>'+esc(c.a)+'</b>';speak('Ouch, you lost a heart. The answer is '+c.a+'. It will come back, so remember it.',{force:true});
+      document.querySelectorAll('.opt').forEach(x=>{if(norm(x.dataset.v)===norm(c.a))x.classList.add('right');else if(norm(x.dataset.v)===norm(given))x.classList.add('wrong')});
+      if(hearts<=0)return nextBtn(lose,'The boss escaped…','pink');nextBtn(next,'Keep fighting ➜')};
+    if(typed){$('typed').focus();const go=()=>{if(!$('typed').value.trim())return;$('ok').disabled=true;answer($('typed').value)};$('ok').onclick=go;$('typed').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}}}
+    else{let a=false;document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(a)return;a=true;answer(b.dataset.v)})}
+  }
+  function win(){d.wins++;d.best=d.best==null?hearts:Math.max(d.best,hearts);d.history.push({date:todayKey(),won:true,hearts,secs:Math.round((Date.now()-t0)/1000)});scheduleDeck(d,true);const m=deckMastery(d);const reward=10+hearts*5+(m>=100?20:0);coins(reward);D.stars+=1;if(m>=100&&!D.badges.includes('deck_'+d.id)){D.badges.push('deck_'+d.id)}save();confetti();
+    render('<div class="stars pop">🏆⚔️🏆</div><h1 class="center">Boss defeated!</h1><p class="center">'+esc(d.title)+' · '+hearts+' heart'+(hearts===1?'':'s')+' left · +'+reward+' coins</p><p class="center">Mastery: <b>'+m+'%</b>'+(m>=100?' · DECK MASTERED! 🎉':' · comes back '+d.due+' so it sticks')+'</p>'+(missed.size?'<p class="center muted">Still tricky: '+[...missed].map(k=>esc(d.cards[k].q)).slice(0,5).join(' · ')+'</p>':'')+'<div class="row" style="justify-content:center"><button class="btn" id="back">Back to the Arena</button></div>');
+    speak('Boss defeated! '+hearts+' hearts left. '+(m>=100?'Deck mastered!':'Great work!'));$('back').onclick=arenaHome;logItem('arena',{deck:d.title,won:true,hearts})}
+  function lose(){d.losses++;d.history.push({date:todayKey(),won:false,hits,secs:Math.round((Date.now()-t0)/1000)});scheduleDeck(d,false);save();logItem('arena',{deck:d.title,won:false,hits});
+    render('<div class="stars">💨👹</div><h2 class="center">The boss escaped!</h2><p class="center">You landed '+hits+' hits. No coins this time, but you know exactly what to study: the cards you missed are below. Review them, then challenge the boss again.</p><div class="row" style="justify-content:center"><button class="btn pink" id="review">📖 Review the '+missed.size+' missed card'+(missed.size===1?'':'s')+'</button><button class="btn ghost" id="back">Back to the Arena</button></div>');
+    speak('The boss escaped! No coins this time. Review the cards you missed, then challenge it again. You will get it.',{force:true});$('back').onclick=arenaHome;
+    $('review').onclick=()=>{const sub={cards:[...missed].map(k=>d.cards[k])};studyCards(sub,()=>{render('<div class="stars">⚔️</div><h2 class="center">Ready for a rematch?</h2><div class="row" style="justify-content:center"><button class="btn good" id="again">Challenge the boss again</button><button class="btn ghost" id="later">Later</button></div>');$('again').onclick=()=>battle(d);$('later').onclick=arenaHome})}}
+  render('<div class="stars">👹</div><h2 class="center">'+esc(d.title)+'</h2><p class="center">The boss has <b>'+total+'</b> health. Every right answer is a hit, three in a row hits harder. You have <b>3 hearts</b>. A wrong answer costs one, and that card comes back.</p><p class="center muted">No clock. Think before you tap.</p><div class="row" style="justify-content:center"><button class="btn pink" id="go" style="font-size:1.4rem">⚔️ Fight!</button><button class="btn ghost sm" id="back">Back</button></div>');
+  speak('The boss has '+total+' health. You have three hearts. Think before you tap. Fight!',{force:true});$('go').onclick=next;$('back').onclick=()=>deckMenu(d);
+}
+// grown-ups: load and manage decks
+function schoolHTML(){const ds=decks();return '<p class="muted" style="font-size:.95rem">Paste a study guide below. One item per line: "term - definition", "term: definition", "Question? Answer", or Q:/A: on two lines. Each guide becomes a boss in the Study Arena.</p><div class="box gold"><div class="row"><label>Subject <select id="dSubj">'+SUBJECTS.map(s=>'<option value="'+s[0]+'">'+s[1]+' '+s[2]+'</option>').join('')+'</select></label><label>Title <input type="text" id="dTitle" class="wide" style="width:14em" placeholder="e.g. Ch. 5 Ancient Rome test"></label></div><textarea id="dText" style="width:100%;min-height:160px;font:inherit;font-size:.95rem;border-radius:12px;border:2px solid var(--line);padding:10px;background:var(--card);color:var(--fg)" placeholder="photosynthesis - how plants make food from sunlight&#10;What is the capital of Italy? Rome&#10;Q: Who was Charlemagne?&#10;A: King of the Franks crowned emperor in 800"></textarea><div class="row"><button class="btn sm" id="dPreview">Preview</button><button class="btn sm good" id="dAdd" disabled>Add deck</button><span id="dCount" class="muted" style="font-size:.9rem"></span></div><div id="dPrev" style="font-size:.9rem"></div></div>'+(ds.length?'<h3>Decks</h3>'+ds.map(d=>{const s=subjOf(d.subject);const weak=d.cards.filter(c=>c.wrong>c.right);return '<div class="box" data-id="'+d.id+'"><div class="row" style="justify-content:space-between"><b>'+s[1]+' '+esc(d.title)+'</b><span class="muted">'+d.cards.length+' cards · '+deckMastery(d)+'% · wins '+d.wins+' · escapes '+d.losses+' · next '+d.due+'</span></div>'+(weak.length?'<p style="font-size:.9rem">Tricky: '+weak.slice(0,8).map(c=>'<span class="chip bad">'+esc(c.q)+'</span>').join('')+'</p>':'')+'<div class="row"><button class="btn ghost sm dDue">Make it due today</button><button class="btn ghost sm dReset">Reset mastery</button><button class="btn ghost sm dDel">Delete</button></div></div>'}).join(''):'')}
+function wireSchool(){const prev=()=>{const cards=parseGuide($('dText').value);$('dCount').textContent=cards.length+' card'+(cards.length===1?'':'s')+' found';$('dAdd').disabled=cards.length<3;$('dPrev').innerHTML=cards.slice(0,6).map(c=>'<div>• <b>'+esc(c.q)+'</b> → '+esc(c.a)+'</div>').join('')+(cards.length>6?'<div class="muted">…and '+(cards.length-6)+' more</div>':'')};
+  if($('dPreview'))$('dPreview').onclick=prev;if($('dText'))$('dText').oninput=prev;
+  if($('dAdd'))$('dAdd').onclick=()=>{const cards=parseGuide($('dText').value);if(cards.length<3)return;addDeck($('dSubj').value,$('dTitle').value.trim(),cards);parentPanel('school')};
+  document.querySelectorAll('.box[data-id]').forEach(b=>{const d=decks().find(x=>x.id===b.dataset.id);if(!d)return;const del=b.querySelector('.dDel'),due=b.querySelector('.dDue'),rs=b.querySelector('.dReset');if(del)del.onclick=()=>{if(confirm('Delete "'+d.title+'"?')){D.decks=decks().filter(x=>x!==d);save();parentPanel('school')}};if(due)due.onclick=()=>{d.due=todayKey();save();parentPanel('school')};if(rs)rs.onclick=()=>{d.cards.forEach(c=>{c.box=0});d.due=todayKey();save();parentPanel('school')}})}
 // ---------- Progress analytics for the grown-ups panel ----------
 function keyOf(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function daysBack(n){const out=[];for(let i=n-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);out.push(keyOf(d))}return out}
@@ -1028,12 +1115,13 @@ function analyticsHTML(){
   const checks=C.length?lineChart([{name:'math %',values:C.map(c=>c.math.pct),color:'#2f6bff'},{name:'words %',values:C.map(c=>c.words.pct),color:'#19a974'},{name:'story q (of 3) ×33',values:C.map(c=>Math.round(c.read.comp*33.3)),color:'#9b5cff'},{name:'reading words/min',values:C.map(c=>c.read.wpm),color:'#ff4fa3'}],cl,{max:Math.max(100,...C.map(c=>c.read.wpm||0))})+'<div class="tableWrap"><table><tr><th>Check</th><th>Date</th><th>Math</th><th>Think time</th><th>Words</th><th>Reading</th><th>Accuracy</th><th>Story q</th></tr>'+C.slice().reverse().map(c=>'<tr><td>'+(c.n===1?'Start':'#'+c.n)+'</td><td>'+c.date+'</td><td>'+c.math.right+'/'+c.math.of+' ('+c.math.pct+'%)</td><td>'+(c.math.median!=null?c.math.median+'s':'—')+'</td><td>'+c.words.right+'/'+c.words.of+'</td><td>'+(c.read.wpm?c.read.wpm+' wpm'+(c.read.mode==='oral'?'':' (silent)'):'—')+'</td><td>'+(c.read.acc!=null?c.read.acc+'%':'—')+'</td><td>'+c.read.comp+'/3</td></tr>').join('')+'</table></div>':'<p class="muted">The first check (her starting line) runs the first day she plays, then every 7 days.</p>';
   const cr=(D.clarity||[]).slice().sort((a,b)=>a.id-b.id);const clarity=cr.length?lineChart([{name:'clarity rating (1-5)',values:cr.map(x=>x.rating),color:'#19a974'}],cr.map(x=>x.date.slice(5)),{max:5}):'<p class="muted">Rate her recordings on the Recordings tab and the line appears here.</p>';
   const ib=intelligibilityByWeek();const intel=ib.length?lineChart([{name:'% of spoken words understood',values:ib.map(x=>x.pct),color:'#2f6bff'}],ib.map(x=>x.week.slice(5)),{max:100}):'<p class="muted">Appears after her first spoken words.</p>';
+  const dk=(D.decks||[]);const school=dk.length?dk.map(d=>barRow(subjOf(d.subject)[1]+' '+d.title,deckMastery(d),100,'#9b5cff')).join('')+'<p class="muted" style="font-size:.85rem">Mastery = cards answered right in battle, repeatedly, over days. Wins '+dk.reduce((a,d)=>a+d.wins,0)+' · escapes '+dk.reduce((a,d)=>a+d.losses,0)+'.</p>':'<p class="muted">Load a study guide in the School tab and her subject mastery shows here.</p>';
   // levels
   const lv=SKILL_ORDER.map(k=>barRow(SKILLS[k].name,sk(k).level+1,SKILLS[k].levels.length)).join('')+barRow('Word Work',sk('words').level+1,WORDLV.length,'var(--good)')+barRow('Stories',D.reading.level+1,5,'var(--good)')+barRow('Echo Stage',sk('speech').level+1,SPEECHLV.length,'#9b5cff')+barRow('Typing',sk('typing').level+1,TYPELV.length,'#9b5cff');
   const log=(D.levelLog||[]).slice(-15).reverse().map(e=>'<li>'+e.d+' · '+(SKILLS[e.k]?SKILLS[e.k].name:e.k)+' → level '+(e.l+1)+(SKILLS[e.k]?' ('+SKILLS[e.k].levels[Math.min(e.l,SKILLS[e.k].levels.length-1)].n+')':'')+'</li>').join('');
   // streak / consistency
   const cal=daysBack(28).map(k=>{const d=D.days[k];return '<span title="'+k+'" style="display:inline-block;width:18px;height:18px;border-radius:4px;background:'+(d&&d.star?'var(--good)':d?'var(--coin)':'var(--line)')+'"></span>'}).join('');
-  return '<h3>This week vs last week · this month vs last month</h3>'+cmp+'<h3>Last 30 days, day by day</h3>'+daily+'<h3>Weekly Check (same test every week)</h3>'+checks+'<h3>Speech: words understood by the microphone, week by week</h3>'+intel+'<h3>Speech clarity (your ratings of her recordings)</h3>'+clarity+'<h3>Where she is now</h3>'+lv+'<h3>Level-ups</h3>'+(log?'<ul style="margin:0;padding-left:20px;font-size:.95rem">'+log+'</ul>':'<p class="muted">None yet.</p>')+'<h3>Last 4 weeks</h3><div class="row" style="gap:4px">'+cal+'</div><p class="muted" style="font-size:.85rem">Green = full day, yellow = started, grey = nothing. Streak '+D.streak+', best '+(D.bestStreak||D.streak)+', day stars '+D.dayStars+'.</p>';
+  return '<h3>This week vs last week · this month vs last month</h3>'+cmp+'<h3>Last 30 days, day by day</h3>'+daily+'<h3>Weekly Check (same test every week)</h3>'+checks+'<h3>Speech: words understood by the microphone, week by week</h3>'+intel+'<h3>Speech clarity (your ratings of her recordings)</h3>'+clarity+'<h3>School subjects (Study Arena)</h3>'+school+'<h3>Where she is now</h3>'+lv+'<h3>Level-ups</h3>'+(log?'<ul style="margin:0;padding-left:20px;font-size:.95rem">'+log+'</ul>':'<p class="muted">None yet.</p>')+'<h3>Last 4 weeks</h3><div class="row" style="gap:4px">'+cal+'</div><p class="muted" style="font-size:.85rem">Green = full day, yellow = started, grey = nothing. Streak '+D.streak+', best '+(D.bestStreak||D.streak)+', day stars '+D.dayStars+'.</p>';
 }
 
 async function renderClips(){const el=$('clips');if(!el)return;const clips=(await listClips()).slice().reverse();if(!clips.length){el.innerHTML='<p class="muted">No recordings yet. They appear after her first Echo Stage or Weekly Check.</p>';return}
@@ -1049,15 +1137,17 @@ const QUESTS=[
  {key:'speech',em:'🎤',name:'Echo Stage',sub:'say it clearly',run:speechQuest},
  {key:'typing',em:'⌨️',name:'Typing Island',sub:'spell it, type it',run:typingQuest},
 ];
+function arenaTile(){const ds=(D.decks||[]);if(!ds.length)return '';const due=dueDecks().length;return '<button class="quest '+(due?'now':'')+'" id="arena" style="margin-top:4px;width:100%"><span class="em">⚔️</span><b>Study Arena</b><span class="sub">'+(due?due+' boss'+(due>1?'es':'')+' ready to battle · play as long as you like':'all bosses resting · study any deck anytime')+'</span></button>'}
 function activeQuests(){return QUESTS.filter(q=>!q.when||q.when())}
 function home(){
   const t=today();const QS=activeQuests();const nextQ=QS.find(q=>!t.done.includes(q.key));
   const tiles=QS.map(q=>{const done=t.done.includes(q.key);const now=nextQ&&nextQ.key===q.key;return '<button class="quest '+(done?'done':now?'now':'locked')+'" data-k="'+q.key+'" '+(done||!now?'disabled':'')+'><span class="em">'+q.em+'</span><b>'+q.name+'</b><span class="sub">'+(done?'✅ done today':now?'▶ tap to start':'🔒 after '+QS[QS.indexOf(q)-1].name)+'</span></button>'}).join('');
   const greet=t.done.length===0?'Hi '+D.name+'! '+QS.length+' quests today. Start at the top.':t.done.length<QS.length?'Nice work so far! '+(QS.length-t.done.length)+' to go.':'All done! Today\'s star is yours. ⭐';
-  render('<div class="row" style="justify-content:space-between"><h2>'+D.avatar+' Today\'s Quest</h2><span class="streak">🔥 '+D.streak+' day streak</span></div><p>'+greet+'</p><div class="quests" id="qs">'+tiles+'</div>'+(t.star?'<div class="row" style="justify-content:center"><button class="btn ghost" id="bonus">🎁 Bonus round (extra coins)</button><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>':'<div class="row" style="justify-content:center"><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>'));
+  render('<div class="row" style="justify-content:space-between"><h2>'+D.avatar+' Today\'s Quest</h2><span class="streak">🔥 '+D.streak+' day streak</span></div><p>'+greet+'</p><div class="quests" id="qs">'+tiles+'</div>'+arenaTile()+(t.star?'<div class="row" style="justify-content:center"><button class="btn ghost" id="bonus">🎁 Bonus round (extra coins)</button><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>':'<div class="row" style="justify-content:center"><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>'));
   document.querySelectorAll('#qs .quest').forEach(b=>b.onclick=()=>{const q=QUESTS.find(x=>x.key===b.dataset.k);if(q&&nextQ&&q.key===nextQ.key)q.run(home)});
   if(t.done.length===0&&!D.greeted){D.greeted=todayKey();save();speak(greet)}
   if($('bonus'))$('bonus').onclick=()=>mathQuest(home);
+  if($('arena'))$('arena').onclick=arenaHome;
   $('trophies').onclick=()=>{render('<h2 class="center">🏅 Badges</h2>'+badgesHTML()+'<p class="center muted">'+D.dayStars+' day stars · '+D.coins+' coins · best streak '+(D.bestStreak||D.streak)+'</p><div class="row" style="justify-content:center"><button class="btn" id="back">Back</button></div>');$('back').onclick=home};
 }
 function completeQuest(key,summary,done){
@@ -1095,6 +1185,7 @@ function reportText(){
   lines.push('','Math levels:');SKILL_ORDER.forEach(k=>lines.push('  '+SKILLS[k].name+': '+lvName(k)+(levelAcc(k,sk(k).level)!==null?' · '+levelAcc(k,sk(k).level)+'% at this level':'')+' · mastered '+sk(k).mastered.length));
   lines.push('Word Work level: '+WORDLV[Math.min(sk('words').level,WORDLV.length-1)].n,'Stories level: '+(D.reading.level+2)+'th-grade-ish · read '+D.reading.history.filter(h=>h.title).length,'Echo Stage level: '+SPEECHLV[Math.min(sk('speech').level,SPEECHLV.length-1)].n,'Typing level: '+TYPELV[Math.min(sk('typing').level,TYPELV.length-1)].n);
   const C=D.checks||[];if(C.length){const c=C[C.length-1];lines.push('Latest weekly check ('+c.date+'): math '+c.math.pct+'%, words '+c.words.pct+'%'+(c.read.wpm?', reading '+c.read.wpm+' wpm':'')+', story questions '+c.read.comp+'/3'+(C.length>1?' (first check: math '+C[0].math.pct+'%, words '+C[0].words.pct+'%'+(C[0].read.wpm?', '+C[0].read.wpm+' wpm':'')+')':''))}
+  const ds=(D.decks||[]);if(ds.length)lines.push('School decks: '+ds.map(d=>d.title+' '+deckMastery(d)+'% (wins '+d.wins+', escapes '+d.losses+')').join(' · '));
   const foc=focusSounds();const ib2=intelligibilityByWeek();if(ib2.length){const l=ib2[ib2.length-1];lines.push('Speech: '+(l.pct??'—')+'% of spoken words understood this week'+(foc.length?' · focus sounds: '+foc.map(f=>f.name).join('; '):''))}
   const tr=Object.keys(D.reading.tricky).filter(w=>D.reading.tricky[w]>0);if(tr.length)lines.push('Words to practice: '+tr.join(', '));
   const misses=t.log.filter(l=>l.m==='math'&&!l.ok).slice(0,12).map(l=>l.q+' (said '+l.given+', answer '+l.a+')');if(misses.length)lines.push('','Math misses today:',...misses.map(m=>'  '+m));
@@ -1106,11 +1197,12 @@ function parentGate(){
 }
 function parentPanel(tab){
   tab=tab||'today';const t=today();
-  const tabs=[['today','Today'],['analytics','Progress'],['speech','Speech'],['recordings','Recordings'],['skills','Skills'],['history','History'],['prizes','Prizes'],['settings','Settings'],['report','Report']];
+  const tabs=[['today','Today'],['school','School'],['analytics','Progress'],['speech','Speech'],['recordings','Recordings'],['skills','Skills'],['history','History'],['prizes','Prizes'],['settings','Settings'],['report','Report']];
   let body='';
   if(tab==='today'){const acc=t.items?Math.round(100*t.correct/t.items):0;body='<p><b>'+t.done.length+' of 6</b> quests · '+t.items+' answers · '+acc+'% right · ~'+Math.round(t.secs/60)+' min answering · '+t.breaks+' breaks</p><table><tr><th>Quest</th><th>Result</th></tr>'+QUESTS.map(q=>'<tr><td>'+q.em+' '+q.name+'</td><td>'+esc((t.summaries||{})[q.key]||(t.done.includes(q.key)?'done':'—'))+'</td></tr>').join('')+'</table><h3>Misses today</h3>'+(t.log.filter(l=>!l.ok).length?'<ul style="margin:0;padding-left:20px;font-size:1rem">'+t.log.filter(l=>!l.ok).map(l=>'<li>'+esc(l.m==='math'||l.m==='sparks'?l.q+' → she said '+l.given+' (answer '+l.a+')':l.m==='words'?'word: '+l.w+(l.heard?' (heard "'+l.heard+'")':''):l.m==='speech'?'speech: '+l.t:l.m==='typing'?'typed "'+l.typed+'" for '+l.t:JSON.stringify(l))+'</li>').join('')+'</ul>':'<p class="muted">None yet.</p>')}
   if(tab==='skills'){body='<table><tr><th>Skill</th><th>Where she is</th><th>Set level</th></tr>'+SKILL_ORDER.map(k=>'<tr><td>'+SKILLS[k].em+' '+SKILLS[k].name+'</td><td>'+esc(lvName(k))+(levelAcc(k,sk(k).level)!==null?'<br><span class="muted">'+levelAcc(k,sk(k).level)+'% right at this level · mastered '+sk(k).mastered.length+'</span>':'')+(skillOpen(k)?'':'<br><span class="muted">locked until basics are ready</span>')+'</td><td><select data-k="'+k+'" class="setlv">'+SKILLS[k].levels.map((L,i)=>'<option value="'+i+'" '+(i===sk(k).level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr>').join('')+'<tr><td>🔤 Word Work</td><td>'+WORDLV[Math.min(sk('words').level,WORDLV.length-1)].n+'</td><td><select data-k="words" class="setlv">'+WORDLV.map((L,i)=>'<option value="'+i+'" '+(i===sk('words').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr><tr><td>📖 Stories</td><td>level '+(D.reading.level+1)+' of 5 · '+D.reading.history.filter(h=>h.title).length+' read</td><td><select id="setStory">'+[0,1,2,3,4].map(i=>'<option value="'+i+'" '+(i===D.reading.level?'selected':'')+'>'+(i+1)+' (~grade '+(i+2)+')</option>').join('')+'</select></td></tr><tr><td>🎤 Echo Stage</td><td>'+SPEECHLV[Math.min(sk('speech').level,SPEECHLV.length-1)].n+'</td><td><select data-k="speech" class="setlv">'+SPEECHLV.map((L,i)=>'<option value="'+i+'" '+(i===sk('speech').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr><tr><td>⌨️ Typing</td><td>'+TYPELV[Math.min(sk('typing').level,TYPELV.length-1)].n+'</td><td><select data-k="typing" class="setlv">'+TYPELV.map((L,i)=>'<option value="'+i+'" '+(i===sk('typing').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr></table><p class="muted" style="font-size:.95rem">Levels move up on their own when she gets 5 of the last 6 right. Only change them by hand if a level is clearly wrong for her.</p><h3>Words to practice</h3><p>'+(Object.keys(D.reading.tricky).filter(w=>D.reading.tricky[w]>0).map(w=>'<span class="chip bad">'+w+'</span>').join('')||'<span class="muted">none</span>')+'</p><h3>Recent stories</h3>'+(D.reading.history.filter(h=>h.title).slice(-5).reverse().map(h=>'<p style="font-size:1rem">'+h.date+' · <b>'+esc(h.title)+'</b> · '+h.comp+'/3 questions'+(h.acc!==null&&h.acc!==undefined?' · '+h.acc+'% words':'')+(h.retell&&h.retell.hits!==undefined?' · retell '+h.retell.hits+'/'+h.retell.of+' key ideas':'')+'</p>').join('')||'<p class="muted">none yet</p>')}
   if(tab==='analytics'){body=analyticsHTML()}
+  if(tab==='school'){body=schoolHTML()}
   if(tab==='speech'){body=speechPlanHTML()}
   if(tab==='recordings'){body='<p class="muted" style="font-size:.95rem">Every Echo Stage ends in the Recording Booth, and the Weekly Check story is recorded too. Listen, then rate how clear she sounded (1 = hard to understand, 5 = every word clear). Ratings show up on the Progress tab.</p><div id="clips"><p class="muted">Loading…</p></div>'}
   if(tab==='history'){const keys=Object.keys(D.days).sort().reverse().slice(0,21);body='<table><tr><th>Day</th><th>Star</th><th>Quests</th><th>Answers</th><th>Right</th></tr>'+keys.map(k=>{const d=D.days[k];return '<tr><td>'+k+'</td><td>'+(d.star?'⭐':'')+'</td><td>'+d.done.length+'/6</td><td>'+d.items+'</td><td>'+(d.items?Math.round(100*d.correct/d.items)+'%':'')+'</td></tr>'}).join('')+'</table>'+badgesHTML()}
@@ -1119,6 +1211,7 @@ function parentPanel(tab){
   if(tab==='report'){const txt=reportText();body='<textarea id="rep" style="width:100%;min-height:260px;font:inherit;font-size:.95rem;border-radius:12px;border:2px solid var(--line);padding:10px;background:var(--card);color:var(--fg)">'+esc(txt)+'</textarea><div class="row"><button class="btn sm" id="copyR">Copy</button><a class="btn sm" style="text-decoration:none;display:inline-block" id="mailR" href="mailto:bahmedov82@gmail.com?subject='+encodeURIComponent('Camila\'s Quest · '+todayKey())+'&body='+encodeURIComponent(txt)+'">✉️ Email to Dad</a></div>'}
   render('<div class="row" style="justify-content:space-between"><h2>Grown-ups</h2><button class="btn ghost sm" id="back">Back to Camila</button></div><div class="row">'+tabs.map(([k,n])=>'<button class="btn sm '+(k===tab?'':'ghost')+' ptab" data-t="'+k+'">'+n+'</button>').join('')+'</div>'+body);
   if(tab==='recordings')renderClips();
+  if(tab==='school')wireSchool();
   $('back').onclick=home;document.querySelectorAll('.ptab').forEach(b=>b.onclick=()=>parentPanel(b.dataset.t));
   document.querySelectorAll('.setlv').forEach(s=>s.onchange=()=>{const k=s.dataset.k;sk(k).level=+s.value;save();parentPanel('skills')});
   if($('setStory'))$('setStory').onchange=()=>{D.reading.level=+$('setStory').value;save();parentPanel('skills')};
@@ -1146,7 +1239,7 @@ $('ver').textContent='v'+VERSION;
 $('musicBtn').onclick=()=>setMusic(!MUSIC);setMusic(MUSIC);
 $('parentLink').onclick=parentGate;
 hud();
-if(location.hash==='#debug')window.__cq={D,run:k=>QUESTS.find(q=>q.key===k).run(home),home,parentPanel,save,listClips,recordingBooth,profileWords,speechDrills};
+if(location.hash==='#debug')window.__cq={D,run:k=>QUESTS.find(q=>q.key===k).run(home),home,parentPanel,save,listClips,recordingBooth,profileWords,speechDrills,parseGuide,addDeck,decks,arenaHome,battle};
 if(D.welcomed)home();else welcome();
 })();
 </script>
