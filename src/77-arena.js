@@ -22,7 +22,7 @@ function dueDecks(){const t=todayKey();return decks().filter(d=>d.due<=t&&deckMa
 function scheduleDeck(d,won){const m=deckMastery(d);const days=!won?1:m>=100?14:m>=70?7:m>=40?3:1;const n=new Date();n.setDate(n.getDate()+days);d.due=keyOf(n);save()}
 const isNumeric=s=>/^[\d.,$%\s/-]+$/.test(s);
 // distractors: other answers from the same deck (same "shape" where possible)
-function distractFor(d,card){const others=d.cards.filter(c=>c!==card&&norm(c.a)!==norm(card.a)).map(c=>c.a);const same=others.filter(a=>isNumeric(a)===isNumeric(card.a));const pool=shuffle([...new Set(same.length>=3?same:others)]);const out=pool.slice(0,3);while(out.length<3)out.push(isNumeric(card.a)?String(parseFloat(card.a.replace(/[^\d.-]/g,''))+out.length+1||'0'):['Not sure','None of these','All of these'][out.length]);return out}
+function distractFor(d,card){const others=[...new Set(d.cards.filter(c=>c!==card&&norm(c.a)!==norm(card.a)).map(c=>c.a))];const wc=s=>s.trim().split(/\s+/).length;const cap=s=>/^[A-Z0-9]/.test(s);const sim=a=>Math.abs(wc(a)-wc(card.a))+(cap(a)===cap(card.a)?0:2)+(isNumeric(a)===isNumeric(card.a)?0:3)+Math.random()*0.9;const pool=others.sort((x,y)=>sim(x)-sim(y)).slice(0,6);const out=shuffle(pool).slice(0,3);while(out.length<3)out.push(isNumeric(card.a)?String(parseFloat(card.a.replace(/[^\d.-]/g,''))+out.length+1||'0'):['Not sure','None of these','All of these'][out.length]);return out}
 
 function arenaHome(){
   const ds=decks();const due=dueDecks();

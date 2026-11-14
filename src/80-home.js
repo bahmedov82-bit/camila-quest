@@ -109,7 +109,7 @@ function welcome(){
 $('ver').textContent='v'+VERSION;
 $('musicBtn').onclick=()=>setMusic(!MUSIC);setMusic(MUSIC);
 $('parentLink').onclick=parentGate;
-hud();
+hud();seedStarterDecks();
 if(location.hash==='#debug')window.__cq={D,run:k=>QUESTS.find(q=>q.key===k).run(home),home,parentPanel,save,listClips,recordingBooth,profileWords,speechDrills,parseGuide,addDeck,decks,arenaHome,battle};
 if(D.welcomed)home();else welcome();
 })();
