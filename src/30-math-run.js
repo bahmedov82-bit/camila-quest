@@ -3,10 +3,11 @@ function optLabel(item,o){return item.labels?item.labels[o]:(item.fmt?item.fmt(o
 function showItem(item,meta,onDone){
   const t0=performance.now();let hinted=false;if(window.__cq)window.__cq.answer=String(item.answer);
   const opts=item.options.map(o=>'<button class="opt" data-v="'+esc(o)+'">'+optLabel(item,o)+'</button>').join('');
-  render('<div class="row" style="justify-content:space-between"><span class="muted">'+meta.head+'</span><button class="speak" id="sp" aria-label="Read aloud">🔊</button></div>'+(meta.bar!==undefined?'<div class="bar"><div style="width:'+meta.bar+'%"></div></div>':'')+'<p class="prompt">'+item.q+'</p><div id="vis">'+(item.show?item.visual():'')+'</div><div class="row" style="justify-content:center"><button class="btn ghost" id="show"'+(item.show?' hidden':'')+'>👀 Show me a picture</button></div><div class="opts" id="opts">'+opts+'</div><p class="feedback" id="fb"></p>');
+  render('<div class="row" style="justify-content:space-between"><span class="muted">'+meta.head+'</span><button class="speak" id="sp" aria-label="Read aloud">🔊</button></div>'+(meta.bar!==undefined?'<div class="bar"><div style="width:'+meta.bar+'%"></div></div>':'')+'<p class="prompt">'+item.q+'</p><div id="vis">'+(item.show?item.visual():'')+'</div><div class="row" style="justify-content:center"><button class="btn ghost" id="show"'+(item.show?' hidden':'')+'>👀 Show me a picture</button><button class="btn ghost" id="bd">🧩 Break it down</button></div><div id="bdbox" hidden></div><div class="opts" id="opts">'+opts+'</div><p class="feedback" id="fb"></p>');
   $('sp').onclick=()=>speak(item.spoken);
   if(meta.say)setTimeout(()=>speak(item.spoken),400);
   $('show').onclick=()=>{if(item.show)return;hinted=true;$('vis').innerHTML=item.visual();$('show').hidden=true};
+  $('bd').onclick=()=>{hinted=true;breakDown(item,$('bdbox'));$('bd').hidden=true;if(!item.show){$('vis').innerHTML=item.visual();$('show').hidden=true}};
   let answered=false;
   document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
     if(answered)return;answered=true;
@@ -150,3 +151,19 @@ function sparksQuest(done){
   render('<div class="stars">⚡</div><h2 class="center">Brain Sparks</h2><p class="center">Six quick ones you already know. Try to just <b>see</b> the answer, no counting on fingers. The faster your brain gets, the easier everything else becomes.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Start</button></div>');
   speak('Brain Sparks! Six quick ones you already know. Try to just see the answer.');$('go').onclick=next;
 }
+
+// ---------- Break it down: the same problem-solving routine every time, one step at a time, never the answer ----------
+function breakSteps(item){const ans=String(item.answer);const q=String(item.q).replace(/<[^>]+>/g,'');
+  const hide=t=>t.replace(new RegExp('(^|[^\\d.])'+ans.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![\\d])','g'),'$1__');
+  let specific=(item.how||'').split(/(?<=[.!?])\s+/).map(x=>x.trim()).filter(Boolean);
+  // drop sentences that only announce the answer; mask the answer anywhere else
+  specific=specific.filter(x=>!/^(answer|total|so the answer|that is|the missing number is)\b/i.test(x)&&!(new RegExp('^'+ans.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'[.!]?$').test(x))).map(hide);
+  const steps=[{em:'👀',t:'Read it twice. Out loud if you can.',say:q},{em:'🗣️',t:'Say it in your own words. What is happening?'},{em:'🔎',t:'What do I know? Find the numbers and what they mean.'},{em:'🎯',t:'What am I looking for? Point to the question.'}];
+  if(specific.length)steps.push({em:'✂️',t:'Make it smaller:',sub:specific});
+  steps.push({em:'✅',t:'Now try it. Then check: does my answer make sense?'});
+  return steps}
+function breakDown(item,box){const steps=breakSteps(item);let i=0;box.hidden=false;box.className='box';
+  function show(){const st=steps[i];box.innerHTML='<div class="row" style="justify-content:space-between"><span class="muted">🧩 Break it down · step '+(i+1)+' of '+steps.length+'</span><button class="speak" id="bdsp">🔊</button></div><p style="font-size:1.25rem"><b>'+st.em+' '+esc(st.t)+'</b></p>'+(st.sub?'<ol style="margin:0;padding-left:22px;font-size:1.15rem">'+st.sub.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+'<div class="row" style="justify-content:center">'+(i<steps.length-1?'<button class="btn sm" id="bdn">Next step ➜</button>':'<button class="btn sm good" id="bdn">Got it, I will try</button>')+'</div>';
+    const text=st.t+(st.say?' '+st.say:'')+(st.sub?' '+st.sub.join(' '):'');speak(text.replace(/__/g,'blank'),{force:true,rate:.95});$('bdsp').onclick=()=>speak(text.replace(/__/g,'blank'),{force:true,rate:.95});
+    $('bdn').onclick=()=>{i++;if(i>=steps.length){box.hidden=true;box.innerHTML='';try{speechSynthesis.cancel()}catch(e){}return}show()}}
+  show()}
