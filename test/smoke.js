@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const mode = process.argv[2] || 'mic';
 const FAKE_SR = `
-  class FakeSR { constructor(){this.lang='';} start(){ const self=this; setTimeout(()=>{ const t=document.querySelector('#sent, #theword, .prompt.word, .prompt'); let txt=t?t.textContent:'hello'; if(/Tell me|If you had/.test(txt)) txt='I would sell cookies and lemonade because people like them and they are easy to make'; if(Math.random()<0.3) txt='blah blah'; if(self.onresult) self.onresult({results:[[{transcript:txt},{transcript:txt}]]}); if(self.onend) self.onend(); }, 60); } stop(){} abort(){} }
+  class FakeSR { constructor(){this.lang='';} start(){ const self=this; setTimeout(()=>{ const t=['#sent','#theword','.prompt.word','.prompt.small:not(.muted)'].map(q=>document.querySelector(q)).find(Boolean); let txt=t?t.textContent:'hello'; if(/Tell me|If you had/.test(txt)) txt='I would sell cookies and lemonade because people like them and they are easy to make'; if(Math.random()<0.3) txt='blah blah'; if(self.onresult) self.onresult({results:[[{transcript:txt},{transcript:txt}]]}); if(self.onend) self.onend(); }, 60); } stop(){} abort(){} }
   window.SpeechRecognition = FakeSR; window.webkitSpeechRecognition = FakeSR;`;
 const NO_SR = `delete window.SpeechRecognition; Object.defineProperty(window,'webkitSpeechRecognition',{value:undefined,configurable:true});`;
 (async () => {
@@ -23,7 +23,7 @@ const NO_SR = `delete window.SpeechRecognition; Object.defineProperty(window,'we
     const head = await page.$eval('#screen', s => (s.querySelector('h1,h2,.muted')||{}).textContent || '');
     trail.push(head.slice(0,50)); seen.add(head.replace(/\d+/g, '#').trim().slice(0, 70));
     const html = await page.$eval('#screen', s => s.innerHTML);
-    if (html === lastHtml) { stalls++; if (stalls > 8) { errors.push('STALL at: ' + head + ' :: ' + html.replace(/<[^>]+>/g,' ').slice(0, 300)); break; } } else stalls = 0;
+    if (html === lastHtml) { stalls++; if (stalls > 30) { errors.push('STALL at: ' + head + ' :: ' + html.replace(/<[^>]+>/g,' ').slice(0, 300)); break; } } else stalls = 0;
     lastHtml = html;
     if (await click('#nextBtn')) continue;
     if (await click('#go:not([hidden])')) continue;

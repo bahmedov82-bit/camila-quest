@@ -59,11 +59,11 @@ function checkQuest(done){
   function finish(){
     res.math.pct=Math.round(100*res.math.right/res.math.of);res.math.median=median(res.math.secs);res.words.pct=Math.round(100*res.words.right/res.words.of);
     const P=CHECK_PASSAGE;res.read.wpm=res.read.secs?Math.round(P.words/(res.read.secs/60)):null;res.read.wcpm=(res.read.wpm&&res.read.acc!=null)?Math.round(res.read.wpm*res.read.acc/100):null;
-    D.checks.push(res);D.stars+=2;coins(15);save();
+    D.checks.push(res);const moved=placeFromCheck(res)||[];res.placed=moved;D.stars+=2;coins(15);save();
     const prev=D.checks.length>1?D.checks[D.checks.length-2]:null;
     const delta=(a,b)=>(a==null||b==null)?'':(a-b>0?' (up '+(a-b)+')':a-b<0?' (down '+(b-a)+')':' (same)');
     const msg='Math '+res.math.pct+'%'+(prev?delta(res.math.pct,prev.math.pct):'')+' · words '+res.words.pct+'%'+(prev?delta(res.words.pct,prev.words.pct):'')+(res.read.wpm?' · reading '+res.read.wpm+' words/min'+(prev&&prev.read.wpm?delta(res.read.wpm,prev.read.wpm):''):'')+' · story questions '+res.read.comp+'/3';
-    completeQuest('check',(res.n===1?'Starting line set. ':'Check #'+res.n+' done. ')+msg,done);
+    completeQuest('check',(res.n===1?'Starting line set. ':'Check #'+res.n+' done. ')+msg+(moved.length?' · moved up: '+moved.join(', '):''),done);
   }
   micIntro(res.n===1?'Starting Line':'Weekly Check',res.n===1?'A short check to see where you are today. Same one every week, so you can watch yourself grow.':'Same check as last week. Let\'s see how much you grew.',intro);
 }

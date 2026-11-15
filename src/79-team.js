@@ -38,8 +38,8 @@ function applyPlan(p){
   D.plan={id:p.id||null,note:p.note||'',until:p.until||null};
   if(p.id&&p.id!==D.planApplied&&p.levels&&typeof p.levels==='object'){
     Object.keys(p.levels).forEach(k=>{const v=p.levels[k];if(typeof v!=='number'||v<0)return;
-      if(k==='story'){D.reading.level=Math.floor(v)}
-      else if(SKILLS[k]||['words','speech','typing'].includes(k)){sk(k).level=Math.floor(v)}});
+      if(k==='story'){D.reading.level=Math.max(0,Math.min(STORY_MAX,Math.floor(v)))}
+      else{const max=SKILLS[k]?SKILLS[k].levels.length:k==='words'?WORDLV.length:k==='speech'?SPEECHLV.length:k==='typing'?TYPELV.length:0;if(max)placeSkill(k,Math.floor(v),max)}});
     D.planApplied=p.id;
   }else if(p.id&&!p.levels){D.planApplied=p.id}
   save();

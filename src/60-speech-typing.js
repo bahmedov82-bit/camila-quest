@@ -6,13 +6,14 @@ const SPEECHLV=[
  {n:'Business talk',hint:'Slow and clear, like talking to a customer.',items:['Would you like a muffin today?','Thank you for your order.','That will be two dollars, please.','Profit is the money you keep.','Here is your change.','Come back and see us again!','What flavor would you like?','I made these this morning.']},
  {n:'Longer sentences',hint:'Pause at the comma. Keep going to the end.',items:['When the sun came out, everyone wanted cold lemonade.','A customer is a person who buys what you sell.','She saved her money in three jars: spend, save, and grow.','If you listen to your customers, they will come back.','My cost was six dollars, and my revenue was twelve.','Good quality takes more time, but it brings people back.']},
  {n:'Tell me about it',hint:'Talk for a few sentences. There is no wrong answer.',open:true,items:['Tell me two things you would sell and why.','Tell me about your favorite song and why you like it.','Tell me what you did at school today.','Tell me how to make a sandwich, step by step.','If you had one hundred dollars for a business, what would you buy first?','Tell me about a time you helped someone.']},
+ {n:'Pitch it like a boss',hint:'Look up, smile, and slow down on the numbers.',items:['Hi, I am Camila, and I make the best muffins on the block.','Each muffin is two dollars, or three for five dollars.','I use fresh ingredients, and I bake everything myself.','If you are not happy, I will make it right.','Can I count on you as a customer next Saturday?','My goal this month is to save one hundred dollars.']},
  {n:'Tongue twisters',hint:'Slow first. Then a little faster. Smile!',items:['She sells seashells by the seashore.','Red lorry, yellow lorry.','Six sticky skeletons.','Fresh fried fish.','Which wristwatches are Swiss wristwatches?','A proper copper coffee pot.']},
 ];
 function speechQuest(done){
   const N=5;let i=0,right=0;const lvl=()=>sk('speech').level;const used=new Set();const DR=speechDrills(2);
   function next(){
     if(i>=N){const L=SPEECHLV[Math.min(lvl(),SPEECHLV.length-1)];const lines=(L.open?SPEECHLV[3]:L).items.slice(0,3);return recordingBooth('Echo Stage · '+L.n,lines,finish)}
-    const L=SPEECHLV[Math.min(lvl(),SPEECHLV.length-1)];const fresh=L.items.filter(x=>!used.has(x));const drill=i<DR.length;const target=drill?DR[i]:pick(fresh.length?fresh:L.items);used.add(target);let tries=0;
+    const L=SPEECHLV[Math.min(lvl(),SPEECHLV.length-1)];const lately=recentSeen('speech','t',3);const fresh0=L.items.filter(x=>!used.has(x));const fresh=fresh0.filter(x=>!lately.has(x)).length?fresh0.filter(x=>!lately.has(x)):fresh0;const drill=i<DR.length;const target=drill?DR[i]:pick(fresh.length?fresh:L.items);used.add(target);let tries=0;
     render('<div class="row" style="justify-content:space-between"><span class="muted">🎤 Echo Stage · '+(drill?'focus sound drill':L.n)+' · '+(i+1)+' of '+N+'</span></div><div class="bar"><div style="width:'+Math.round(100*i/N)+'%"></div></div><p class="prompt small muted">'+(L.open&&!drill?'Answer out loud. Tap <b>My turn</b>, then talk.':'Read this out loud. Tap <b>My turn</b>, then say it.')+'</p><p class="prompt '+(target.length<12?'word':'small')+'" style="'+(L.open?'font-weight:500':'')+'">'+esc(target)+'</p><p class="center muted" style="font-size:1rem">'+(drill?'This is one of your focus sounds. Slow and clear, then say it again at normal speed.':L.hint)+'</p><div class="row" style="justify-content:center">'+(L.open&&!drill?'':'<button class="btn ghost" id="hear">🔊 Hear it</button>')+'<button class="btn pink" id="say" style="font-size:1.5rem">🎙️ My turn</button></div><p class="feedback" id="fb"></p><div id="words" class="center"></div>');
     if($('hear'))$('hear').onclick=()=>speak(target,{force:true,rate:.85});
     if(i===0)speak(L.open?'Answer out loud. Tap My turn, then talk.':'Read this out loud. Tap My turn, then say it.',{force:true});
@@ -32,7 +33,7 @@ function speechQuest(done){
       $('fb').textContent='Good effort. Here it is once more, then we move on.';speak(target,{force:true,rate:.8});mark(target,false,'mic',r.text);
     };
   }
-  function mark(t,ok,mode,heard){i++;logItem('speech',{t,ok,mode,heard,level:lvl()});if(mode==='mic')record('speech',lvl(),ok,true);if(ok){right++;coins(2)}
+  function mark(t,ok,mode,heard){i++;logItem('speech',{t,ok,mode,heard,level:lvl()});if(mode==='mic'){record('speech',lvl(),ok,true);if(!ok)stepDownIfStuck('speech')}if(ok){right++;coins(2)}
     if(advanceIfReady('speech',SPEECHLV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">🎤⭐</div><h2 class="center">Speech level up!</h2><p class="center">Next: <b>'+SPEECHLV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');speak('Speech level up! Your voice is getting clearer every day.');coins(5);$('go').onclick=next})}
     nextBtn(next)}
   function finish(){D.stars+=1;coins(8);save();completeQuest('speech',right+' of '+N+' said clearly · level: '+SPEECHLV[Math.min(lvl(),SPEECHLV.length-1)].n,done)}
@@ -46,26 +47,29 @@ const TYPELV=[
  {n:'Copy the sentence',mode:'copy',items:['I sell muffins.','The box is full.','She counts the money.','We walk to the door.','The dog runs fast.','My mom likes tea.']},
  {n:'Spell what you hear',mode:'hear',src:'level'},
  {n:'Type the sentence you hear',mode:'hear',items:['Thank you for your order.','That will be two dollars.','We walk to the next house.','Profit is the money you keep.','A customer buys what you sell.']},
- {n:'Business words',mode:'hear',items:['profit','customer','price','cost','revenue','inventory','location','budget','quality','service']},
+ {n:'Business words',mode:'hear',items:['profit','customer','price','cost','revenue','inventory','location','budget','quality','service','wholesale','margin','markup','negotiation','opportunity']},
+ {n:'Copy a line from your stories',mode:'copy',src:'story'},
+ {n:'School words you hear',mode:'hear',src:'school'},
+ {n:'Write it right (capitals, commas, periods)',mode:'copyexact',items:['On Saturday, Camila sold twelve muffins.','My teacher, Ms. Rose, read us a story.','We live in San Francisco, California.','Cells have a nucleus, a membrane, and cytoplasm.','The Nile River is in Africa.','In Sudan, Salva walked for many days.']},
 ];
 function typingQuest(done){
   const N=5;let i=0,right=0;const times=[];const lvl=()=>sk('typing').level;const used=new Set();
-  function source(L){if(L.items)return L.items;const W=WORDLV[Math.min(sk('words').level,WORDLV.length-1)].w.map(x=>x[0]);return W}
+  function source(L){if(L.items)return L.items;if(L.src==='story'){const lv=Math.max(0,Math.min(STORY_MAX,D.reading.level));return STORIES.filter(x=>x.lv<=lv&&x.lv>=lv-1).flatMap(x=>sentences(x.text)).filter(x=>x.length>=25&&x.length<=80&&!/"/.test(x))}if(L.src==='school'){return WORDLV.slice(-2).flatMap(l=>l.w.map(x=>x[0]))}const W=WORDLV[Math.min(sk('words').level,WORDLV.length-1)].w.map(x=>x[0]);return W}
   function next(){
     if(i>=N)return finish();
-    const L=TYPELV[Math.min(lvl(),TYPELV.length-1)];const pool=source(L).filter(x=>!used.has(x));const target=pick(pool.length?pool:source(L));used.add(target);const hear=L.mode==='hear';let t0=null,tries=0;
+    const L=TYPELV[Math.min(lvl(),TYPELV.length-1)];const lately=recentSeen('typing','t',3);const pool0=source(L).filter(x=>!used.has(x));const pool=pool0.filter(x=>!lately.has(x)).length?pool0.filter(x=>!lately.has(x)):pool0;const target=pick(pool.length?pool:source(L));used.add(target);const hear=L.mode==='hear';const exact=L.mode==='copyexact';let t0=null,tries=0;
     render('<div class="row" style="justify-content:space-between"><span class="muted">⌨️ Typing Island · '+L.n+' · '+(i+1)+' of '+N+'</span><button class="speak" id="sp" aria-label="Hear it">🔊</button></div><div class="bar"><div style="width:'+Math.round(100*i/N)+'%"></div></div><p class="prompt small muted">'+(hear?'Listen, then type what you hear.':'Type exactly what you see.')+'</p>'+(hear?'<div class="row" style="justify-content:center"><button class="btn ghost" id="hear2">🔊 Hear it again</button></div>':'<p class="prompt '+(target.length<12?'word':'small')+'" id="tgt">'+esc(target)+'</p>')+'<div class="row" style="justify-content:center"><input type="text" id="typed" class="wide" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" style="font-size:1.6rem;text-align:center" placeholder="type here"><button class="btn good" id="ok">Check</button></div><p class="feedback" id="fb"></p>');
     const say=()=>speak(target,{force:true,rate:.85});$('sp').onclick=say;if(hear){$('hear2').onclick=say;setTimeout(say,500)}
     const inp=$('typed');inp.focus();inp.oninput=()=>{if(!t0)t0=performance.now()};
-    const check=()=>{const v=norm(inp.value),want=norm(target);if(!v)return;const secs=t0?Math.round((performance.now()-t0)/100)/10:null;
+    const check=()=>{const tidy=x=>String(x).trim().replace(/\s+/g,' ').replace(/[’]/g,"'");const v=exact?tidy(inp.value):norm(inp.value),want=exact?tidy(target):norm(target);if(!v)return;const secs=t0?Math.round((performance.now()-t0)/100)/10:null;
       if(v===want){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));logItem('typing',{t:target,typed:inp.value,ok:true,secs,tries,level:lvl()});record('typing',lvl(),tries===0,true);right++;coins(2);if(secs)times.push({chars:target.length,secs});i++;
         if(advanceIfReady('typing',TYPELV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">⌨️⭐</div><h2 class="center">Typing level up!</h2><p class="center">Next: <b>'+TYPELV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');coins(5);$('go').onclick=next})}
         return nextBtn(next)}
       if(tries<1){tries++;const diff=want.split('').map((c,k)=>c===(v[k]||'')?c:'<b style="color:var(--accent)">'+(c===' '?'␣':c)+'</b>').join('');$('fb').innerHTML='Not yet. The pink letters need fixing: '+diff;speak('Not yet. Look at the pink letters. '+(hear?'Listen again: '+target:'')+'. Fix it and check again.',{force:true,rate:.9});inp.focus();return}
-      $('fb').innerHTML='It is spelled <b>'+esc(target)+'</b>. Type it once to lock it in.';speak('It is spelled like this. Type it once to lock it in.',{force:true});inp.value='';inp.placeholder=target;logItem('typing',{t:target,typed:v,ok:false,secs,tries,level:lvl()});record('typing',lvl(),false);tries=99;i++;
-      $('ok').onclick=()=>{if(norm(inp.value)===want){coins(1);next()}else{inp.focus()}}};
+      $('fb').innerHTML='It is spelled <b>'+esc(target)+'</b>. Type it once to lock it in.';speak('It is spelled like this. Type it once to lock it in.',{force:true});inp.value='';inp.placeholder=target;logItem('typing',{t:target,typed:v,ok:false,secs,tries,level:lvl()});record('typing',lvl(),false);stepDownIfStuck('typing');tries=99;i++;
+      $('ok').onclick=()=>{if((exact?tidy(inp.value):norm(inp.value))===want){coins(1);next()}else{inp.focus()}}};
     $('ok').onclick=check;inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('ok').click()}};
   }
-  function finish(){const tot=times.reduce((a,x)=>({c:a.c+x.chars,s:a.s+x.secs}),{c:0,s:0});const wpm=tot.s?Math.round((tot.c/5)/(tot.s/60)):null;D.typing.history.push({date:todayKey(),wpm,right});D.stars+=1;coins(8);save();completeQuest('typing',right+' of '+N+' typed right'+(wpm?' · about '+wpm+' words per minute':'')+' · level: '+TYPELV[Math.min(lvl(),TYPELV.length-1)].n,done)}
+  function finish(){const tot=times.reduce((a,x)=>({c:a.c+x.chars,s:a.s+x.secs}),{c:0,s:0});let wpm=tot.s?Math.round((tot.c/5)/(tot.s/60)):null;if(wpm!=null&&(wpm>150||tot.s<2))wpm=null;D.typing.history.push({date:todayKey(),wpm,right});D.stars+=1;coins(8);save();completeQuest('typing',right+' of '+N+' typed right'+(wpm?' · about '+wpm+' words per minute':'')+' · level: '+TYPELV[Math.min(lvl(),TYPELV.length-1)].n,done)}
   render('<div class="stars">⌨️</div><h2 class="center">Typing Island</h2><p class="center">Five words or lines. Type carefully. Spelling counts, speed comes later.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Start</button></div>');speak('Typing Island! Five words or lines. Type carefully.');$('go').onclick=next;
 }

@@ -25,6 +25,8 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(D))}catch(e){}}
 function today(){const k=todayKey();if(!D.days[k])D.days[k]={done:[],star:false,items:0,correct:0,secs:0,log:[],breaks:0,started:new Date().toISOString()};return D.days[k]}
 function hud(){$('coins').textContent=D.coins;$('stars').textContent=D.stars;$('streak').textContent=D.streak;prizebar()}
 function coins(n){D.coins+=n;hud()}
+// things she already did in the last few days (so the same words and lines do not come back every day)
+function recentSeen(mod,field,days){const keys=Object.keys(D.days).sort().slice(-(days||4));const out=new Set();keys.forEach(k=>(D.days[k].log||[]).forEach(l=>{if(l.m===mod&&l[field])out.add(l[field])}));return out}
 function logItem(mod,rec){const t=today();t.items++;if(rec.ok)t.correct++;if(rec.secs)t.secs+=rec.secs;t.log.push(Object.assign({m:mod,at:Date.now()},rec));save()}
 
 // ---------- voice ----------
@@ -36,7 +38,7 @@ function voiceScore(v){if(!v.lang||!/^en/i.test(v.lang))return -1;let s=0;const 
 function englishVoices(){try{return speechSynthesis.getVoices().filter(v=>voiceScore(v)>=0).sort((a,b)=>voiceScore(b)-voiceScore(a))}catch(e){return []}}
 function pickVoice(){try{const vs=englishVoices();if(!vs.length)return;if(D.voiceName){const v=vs.find(x=>x.name===D.voiceName);if(v){VOICE=v;return}}VOICE=vs[0]}catch(e){}}
 try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
-function speak(t,opts){try{opts=opts||{};if(MUSIC&&!opts.force)return;if(!('speechSynthesis'in window))return;if(!opts.queue)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/[*_#]/g,''));u.rate=opts.rate||0.97;u.pitch=opts.pitch||1.0;u.volume=1;if(VOICE)u.voice=VOICE;speechSynthesis.speak(u)}catch(e){}}
+function speak(t,opts){if(window.__cq)window.__cq.spoken=String(t);try{opts=opts||{};if(MUSIC&&!opts.force)return;if(!('speechSynthesis'in window))return;if(!opts.queue)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/[*_#]/g,''));u.rate=opts.rate||0.97;u.pitch=opts.pitch||1.0;u.volume=1;if(VOICE)u.voice=VOICE;speechSynthesis.speak(u)}catch(e){}}
 const CHEERS=['Yes! You got it!','Boom! Nailed it!','That is right, Camila!','Whoa, great thinking!','Look at you go!','You are on fire!','Amazing, Camila!','Yes yes yes!','Super star!','High five!','Your brain is growing!','That is how a boss does it!'];
 const NOTYET=['Not yet, and that is okay. Let\'s look at it together.','So close! Let\'s see how it works.','Good try, Camila. Let me show you.','Tricky one! Let\'s work it out together.','Not yet means you are on your way. Watch this.'];
 
@@ -71,10 +73,19 @@ function resumeMusicHint(){if(D.musicWasOn){D.musicWasOn=false;save();setMusic(t
 function sk(key){if(!D.skills[key])D.skills[key]={level:0,hist:{},mastered:[],review:{},reviewMiss:{}};return D.skills[key]}
 // hist entries: 0 = wrong or needed a hint, 1 = right, 2 = right and fast (recall, not counting)
 function record(key,level,ok,fast){const s=sk(key);const h=s.hist[level]=(s.hist[level]||[]);h.push(ok?(fast?2:1):0);if(h.length>12)h.shift();save()}
-function isMastered(key,level){const h=sk(key).hist[level]||[];if(h.length>=4&&h.slice(-4).every(x=>x===2))return true;if(h.length<6)return false;return h.slice(-6).filter(x=>x>0).length>=5}
+// Mastered when: a clean start (first 3 answers all right = she already knows it, test out), or 4 right in a row,
+// or 5 of the last 6 right. This keeps a fast learner moving instead of grinding levels she already owns.
+function isMastered(key,level){const h=sk(key).hist[level]||[];if(h.length>=3&&h.length<=4&&h.every(x=>x>0))return true;if(h.length>=4&&h.slice(-4).every(x=>x>0))return true;if(h.length<6)return false;return h.slice(-6).filter(x=>x>0).length>=5}
+// Too hard: 4+ tries and at most 1 of the last 4 right. Drop one level so she is never stuck failing.
+function isTooHard(key,level){const h=sk(key).hist[level]||[];return h.length>=4&&h.slice(-4).filter(x=>x>0).length<=1}
 function levelAcc(key,level){const h=sk(key).hist[level]||[];if(!h.length)return null;return Math.round(100*h.filter(x=>x>0).length/h.length)}
-function advanceIfReady(key,max){const s=sk(key);if(isMastered(key,s.level)&&s.level<max-1){if(!s.mastered.includes(s.level))s.mastered.push(s.level);s.review[s.level]=todayKey();s.level++;D.levelLog=D.levelLog||[];D.levelLog.push({d:todayKey(),k:key,l:s.level});save();return true}return false}
-function dueReview(key){const s=sk(key);const due=s.mastered.filter(l=>s.review[l]!==todayKey());return due.length?due[rnd(0,due.length-1)]:null}
+function stepDownIfStuck(key){const s=sk(key);if(s.level>0&&isTooHard(key,s.level)){s.hist[s.level]=[];s.level--;s.mastered=s.mastered.filter(l=>l<s.level);s.hist[s.level]=[];D.levelLog=D.levelLog||[];D.levelLog.push({d:todayKey(),k:key,l:s.level,down:1});save();return true}return false}
+// Put a skill at a level: everything below counts as mastered (shows up in reviews and Brain Sparks).
+function placeSkill(key,level,max){const s=sk(key);level=Math.max(0,Math.min(level,max-1));s.level=level;s.mastered=[];for(let l=0;l<level;l++){s.mastered.push(l);if(!s.review[l])s.review[l]='2000-01-01'}s.hist[level]=[];D.levelLog=D.levelLog||[];D.levelLog.push({d:todayKey(),k:key,l:level,placed:1});save()}
+function advanceIfReady(key,max){const s=sk(key);if(isMastered(key,s.level)&&s.level>=max-1&&!s.mastered.includes(s.level)){s.mastered.push(s.level);s.review[s.level]=todayKey();save();return false}
+  if(isMastered(key,s.level)&&s.level<max-1){if(!s.mastered.includes(s.level))s.mastered.push(s.level);s.review[s.level]=todayKey();s.level++;D.levelLog=D.levelLog||[];D.levelLog.push({d:todayKey(),k:key,l:s.level});save();return true}return false}
+// Reviews come from the top 3 levels she mastered (recent, useful work), not from the baby levels at the bottom.
+function dueReview(key){const s=sk(key);const top=s.mastered.slice().sort((a,b)=>b-a).slice(0,3);const due=top.filter(l=>s.review[l]!==todayKey());return due.length?due[rnd(0,due.length-1)]:null}
 function reviewResult(key,level,ok){const s=sk(key);s.review[level]=todayKey();if(ok){s.reviewMiss[level]=0}else{s.reviewMiss[level]=(s.reviewMiss[level]||0)+1;if(s.reviewMiss[level]>=2){s.mastered=s.mastered.filter(l=>l!==level);s.hist[level]=[];if(level<s.level)s.level=level;s.reviewMiss[level]=0}}save()}
 
 // ---------- day, streak, prizes, badges ----------

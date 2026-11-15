@@ -102,7 +102,10 @@ function tapCount(item,done){
 }
 
 // ---------- Math Quest: today's adaptive set ----------
-function genItem(key,level){const L=SKILLS[key].levels[Math.max(0,Math.min(level,SKILLS[key].levels.length-1))];let it=null,g=0;while(!it&&g<40){g++;it=L.g()}return it}
+// No repeats: a question she saw in the last ~150 comes back only when the level has nothing new left.
+function genItem(key,level){const L=SKILLS[key].levels[Math.max(0,Math.min(level,SKILLS[key].levels.length-1))];D.recentQ=D.recentQ||[];let it=null,best=null,g=0;
+  while(g<60){g++;const c=L.g();if(!c)continue;best=best||c;const sig=key+'|'+String(c.q).replace(/<[^>]+>/g,'')+'|'+c.answer;if(!D.recentQ.includes(sig)){it=c;break}}
+  it=it||best;if(window.__cq)window.__cq.last={key,level};const sig=key+'|'+String(it.q).replace(/<[^>]+>/g,'')+'|'+it.answer;D.recentQ.push(sig);if(D.recentQ.length>150)D.recentQ.splice(0,D.recentQ.length-150);return it}
 function mathQuest(done){
   const N=D.settings.items||10;let i=0,right=0;const back={},wrongRun={},touched=new Set();let streak=0;
   // Two focus skills per day (the two furthest behind, rotating on ties) get most of the questions, so a level can be mastered in one sitting.
@@ -120,6 +123,7 @@ function mathQuest(done){
       if(review){reviewResult(key,level,ok)}else{record(key,level,ok&&!hinted,secs<6)}
       if(ok){right++;streak++;wrongRun[key]=0;if(!review&&advanceIfReady(key,S_.levels.length)){return nextBtn(()=>levelUp(key,next),'Next ➜')}return nextBtn(next)}
       streak=0;wrongRun[key]=(wrongRun[key]||0)+1;
+      if(!review&&stepDownIfStuck(key)){back[key]=0;wrongRun[key]=0;return missFlow(item,{head:S_.em+' '+S_.name},()=>stepBack(S_,next))}
       if(wrongRun[key]>=2&&!review&&level>0){back[key]=(back[key]||0)+1;wrongRun[key]=0;return missFlow(item,{head:S_.em+' '+S_.name},()=>stepBack(S_,next))}
       missFlow(item,{head:S_.em+' '+S_.name},next);
     });
@@ -135,11 +139,13 @@ function levelUp(key,cont){const s=sk(key),S_=SKILLS[key];confetti();render('<di
 // ---------- Brain Sparks: warm-up on things she already knows (builds fast recall) ----------
 function sparksQuest(done){
   const N=6;let i=0,fast=0,right=0;
-  const pool=[];SKILL_ORDER.forEach(k=>sk(k).mastered.forEach(l=>pool.push([k,l])));
-  if(pool.length<2){pool.push(['numbers',0],['numbers',1],['add',0],['add',1],['sub',0],['sub',1])}
+  // warm-up on the two highest levels she owns in each island, so it is quick but never babyish
+  const pool=[];SKILL_ORDER.forEach(k=>sk(k).mastered.slice().sort((a,b)=>b-a).slice(0,2).forEach(l=>pool.push([k,l])));
+  if(pool.length<3){SKILL_ORDER.filter(skillOpen).forEach(k=>pool.push([k,Math.max(0,sk(k).level-1)]))}
+  let lastKey=null;
   function next(){
     if(i>=N)return finish();
-    const [key,level]=pick(pool);const item=genItem(key,level);const S_=SKILLS[key];
+    let kl=pick(pool),g=0;while(kl[0]===lastKey&&g++<6)kl=pick(pool);const [key,level]=kl;lastKey=key;const item=genItem(key,level);const S_=SKILLS[key];
     showItem(item,{head:'⚡ Brain Sparks · '+(i+1)+' of '+N,bar:Math.round(100*i/N)},(ok,secs,hinted,given)=>{
       i++;logItem('sparks',{key,level,ok,secs,hint:hinted,q:item.q.replace(/<[^>]+>/g,''),a:String(item.answer),given});
       if(sk(key).mastered.includes(level))reviewResult(key,level,ok);
