@@ -106,4 +106,4 @@ SKILLS.pre={name:'Big Leagues Island',em:'🚀',levels:[
 ]};
 const SKILL_ORDER=['numbers','add','sub','mul','money','frac','pre'];
 // Prerequisites so hard islands do not appear before the basics
-function skillOpen(k){if(k==='pre')return sk('mul').level>=4&&sk('money').level>=3;if(k==='mul')return sk('add').level>=3;if(k==='money')return sk('add').level>=2&&sk('sub').level>=2;if(k==='frac')return sk('mul').level>=1;return true}
+function skillOpen(k){if(k==='pre')return sk('mul').mastered.length>=8&&sk('money').mastered.length>=5&&sk('frac').mastered.length>=6;if(k==='mul')return sk('add').level>=3;if(k==='money')return sk('add').level>=2&&sk('sub').level>=2;if(k==='frac')return sk('mul').level>=1;return true}

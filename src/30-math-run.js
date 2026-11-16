@@ -3,10 +3,11 @@ function optLabel(item,o){return item.labels?item.labels[o]:(item.fmt?item.fmt(o
 function showItem(item,meta,onDone){
   const t0=performance.now();let hinted=false;if(window.__cq)window.__cq.answer=String(item.answer);
   const opts=item.options.map(o=>'<button class="opt" data-v="'+esc(o)+'">'+optLabel(item,o)+'</button>').join('');
-  render('<div class="row" style="justify-content:space-between"><span class="muted">'+meta.head+'</span><button class="speak" id="sp" aria-label="Read aloud">🔊</button></div>'+(meta.bar!==undefined?'<div class="bar"><div style="width:'+meta.bar+'%"></div></div>':'')+'<p class="prompt">'+item.q+'</p><div id="vis">'+(item.show?item.visual():'')+'</div><div class="row" style="justify-content:center"><button class="btn ghost" id="show"'+(item.show?' hidden':'')+'>👀 Show me a picture</button><button class="btn ghost" id="bd">🧩 Break it down</button></div><div id="bdbox" hidden></div><div class="opts" id="opts">'+opts+'</div><p class="feedback" id="fb"></p>');
+  render('<div class="row" style="justify-content:space-between"><span class="muted">'+meta.head+'</span><button class="speak" id="sp" aria-label="Read aloud">🔊</button></div>'+(meta.bar!==undefined?'<div class="bar"><div style="width:'+meta.bar+'%"></div></div>':'')+'<p class="prompt">'+item.q+'</p><div id="vis">'+(item.show?item.visual():'')+'</div><div class="row" style="justify-content:center"><button class="btn ghost" id="show"'+(item.show?' hidden':'')+'>👀 Show me a picture</button><button class="btn ghost" id="bd">🧩 Break it down</button><button class="btn ghost" id="tools">🧰 Tools</button></div><div id="bdbox" hidden></div><div id="toolbox" hidden></div><div class="opts" id="opts">'+opts+'</div><p class="feedback" id="fb"></p>');
   $('sp').onclick=()=>speak(item.spoken);
   if(meta.say)setTimeout(()=>speak(item.spoken),400);
   $('show').onclick=()=>{if(item.show)return;hinted=true;$('vis').innerHTML=item.visual();$('show').hidden=true};
+  $('tools').onclick=()=>{hinted=true;mathTools(CUR_KEY,$('toolbox'))};
   $('bd').onclick=()=>{hinted=true;breakDown(item,$('bdbox'));$('bd').hidden=true;if(!item.show){$('vis').innerHTML=item.visual();$('show').hidden=true}};
   let answered=false;
   document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
@@ -103,9 +104,10 @@ function tapCount(item,done){
 
 // ---------- Math Quest: today's adaptive set ----------
 // No repeats: a question she saw in the last ~150 comes back only when the level has nothing new left.
+let CUR_KEY='numbers';
 function genItem(key,level){const L=SKILLS[key].levels[Math.max(0,Math.min(level,SKILLS[key].levels.length-1))];D.recentQ=D.recentQ||[];let it=null,best=null,g=0;
   while(g<60){g++;const c=L.g();if(!c)continue;best=best||c;const sig=key+'|'+String(c.q).replace(/<[^>]+>/g,'')+'|'+c.answer;if(!D.recentQ.includes(sig)){it=c;break}}
-  it=it||best;if(window.__cq)window.__cq.last={key,level};const sig=key+'|'+String(it.q).replace(/<[^>]+>/g,'')+'|'+it.answer;D.recentQ.push(sig);if(D.recentQ.length>150)D.recentQ.splice(0,D.recentQ.length-150);return it}
+  it=it||best;CUR_KEY=key;if(window.__cq)window.__cq.last={key,level};const sig=key+'|'+String(it.q).replace(/<[^>]+>/g,'')+'|'+it.answer;D.recentQ.push(sig);if(D.recentQ.length>150)D.recentQ.splice(0,D.recentQ.length-150);return it}
 function mathQuest(done){
   const N=D.settings.items||10;let i=0,right=0;const back={},wrongRun={},touched=new Set();let streak=0;
   // Two focus skills per day (the two furthest behind, rotating on ties) get most of the questions, so a level can be mastered in one sitting.
@@ -173,3 +175,29 @@ function breakDown(item,box){const steps=breakSteps(item);let i=0;box.hidden=fal
     const text=st.t+(st.say?' '+st.say:'')+(st.sub?' '+st.sub.join(' '):'');speak(text.replace(/__/g,'blank'),{force:true,rate:.95});$('bdsp').onclick=()=>speak(text.replace(/__/g,'blank'),{force:true,rate:.95});
     $('bdn').onclick=()=>{i++;if(i>=steps.length){box.hidden=true;box.innerHTML='';try{speechSynthesis.cancel()}catch(e){}return}show()}}
   show()}
+
+// ---------- Math Toolkit: the aids a teacher would put on the desk. Using one counts as help (not mastery). ----------
+function mathTools(key,box){
+  const tabs=[];
+  if(['numbers','add','sub','money'].includes(key))tabs.push(['hund','💯 Hundred chart']);
+  tabs.push(['line','📏 Number line']);
+  if(['mul','money','frac','pre'].includes(key))tabs.push(['times','✖️ Times chart']);
+  if(['frac','pre'].includes(key))tabs.push(['bars','🍫 Fraction bars']);
+  if(key==='money')tabs.push(['coins','🪙 Coins']);
+  box.hidden=false;box.className='box';
+  function show(t){
+    let h='<div class="row" style="justify-content:center;gap:6px">'+tabs.map(x=>'<button class="btn sm '+(x[0]===t?'':'ghost')+'" data-t="'+x[0]+'">'+x[1]+'</button>').join('')+'<button class="btn sm ghost" id="tclose">✖ Close</button></div>';
+    if(t==='hund'){h+='<p class="center muted" style="font-size:.95rem">Tap numbers to mark your jumps. Down one row = +10. Right one box = +1.</p><div id="hc" style="display:grid;grid-template-columns:repeat(10,1fr);gap:2px;max-width:480px;margin:auto">'+Array.from({length:100},(_,i)=>'<button data-n="'+(i+1)+'" style="padding:6px 0;font-size:.95rem;border:1px solid #dde;border-radius:5px;background:var(--card);cursor:pointer">'+(i+1)+'</button>').join('')+'</div>'}
+    if(t==='line'){const max=key==='pre'?10:20,min=key==='pre'?-10:0;h+='<p class="center muted" style="font-size:.95rem">Tap where you start, then tap each hop. Right = add, left = take away.</p><div id="nl" style="display:flex;gap:2px;justify-content:center;flex-wrap:wrap">'+Array.from({length:max-min+1},(_,i)=>i+min).map(v=>'<button data-n="'+v+'" style="width:34px;padding:8px 0;font-size:.95rem;border:none;border-top:3px solid var(--ink,#334);background:transparent;cursor:pointer">'+(v<0?'−'+(-v):v)+'</button>').join('')+'</div><p class="center" id="nlr" style="font-size:1.2rem"></p>'}
+    if(t==='times'){h+='<p class="center muted" style="font-size:.95rem">Tap a box to see the fact. Then try to remember it without the chart.</p><div style="display:grid;grid-template-columns:repeat(11,1fr);gap:2px;max-width:480px;margin:auto;font-size:.9rem;text-align:center"><b>×</b>'+Array.from({length:10},(_,i)=>'<b>'+(i+1)+'</b>').join('');for(let a=1;a<=10;a++){h+='<b>'+a+'</b>';for(let b=1;b<=10;b++)h+='<button class="tc" data-a="'+a+'" data-b="'+b+'" style="padding:5px 0;border:1px solid #dde;border-radius:5px;background:var(--card);cursor:pointer;font-size:.9rem">'+(a*b)+'</button>'}h+='</div><p class="center" id="tcr" style="font-size:1.3rem"></p>'}
+    if(t==='bars'){const ds=[1,2,3,4,5,6,8,10];h+='<p class="center muted" style="font-size:.95rem">Each bar is one whole. Line them up to compare.</p>'+ds.map(d=>'<div style="display:grid;grid-template-columns:repeat('+d+',1fr);gap:2px;margin:3px auto;max-width:480px">'+Array.from({length:d},()=>'<button class="fb" style="padding:6px 0;border:1px solid #dde;border-radius:4px;background:var(--card);font-size:.85rem;cursor:pointer">'+(d===1?'1':'1/'+d)+'</button>').join('')+'</div>').join('')}
+    if(t==='coins'){h+='<div class="row" style="justify-content:center;gap:12px;font-size:1.2rem"><span class="pill">penny 1¢</span><span class="pill">nickel 5¢</span><span class="pill">dime 10¢</span><span class="pill">quarter 25¢</span><span class="pill">$1 = 100¢</span></div><p class="center muted">4 quarters = $1 · 10 dimes = $1 · count the big coins first</p>'}
+    box.innerHTML=h;
+    box.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>show(b.dataset.t));$('tclose').onclick=()=>{box.hidden=true;box.innerHTML=''};
+    box.querySelectorAll('#hc button').forEach(b=>b.onclick=()=>{const on=b.style.background!=='var(--coin)';b.style.background=on?'var(--coin)':'var(--card)';if(on)speak(b.dataset.n,{force:true})});
+    let start=null,hops=0;box.querySelectorAll('#nl button').forEach(b=>b.onclick=()=>{const v=+b.dataset.n;if(start===null){start=v;hops=0;b.style.background='var(--coin)';$('nlr').textContent='Start at '+v}else{b.style.background='#cfe8ff';hops=v-start;$('nlr').textContent='From '+start+' to '+v+': '+(hops>=0?'+':'−')+Math.abs(hops)+' (that is '+Math.abs(hops)+' hops)'}speak(String(v),{force:true})});
+    box.querySelectorAll('.tc').forEach(b=>b.onclick=()=>{const a=+b.dataset.a,c=+b.dataset.b;box.querySelectorAll('.tc').forEach(x=>{x.style.background=(+x.dataset.a===a||+x.dataset.b===c)?'#fff4cc':'var(--card)'});b.style.background='var(--coin)';$('tcr').textContent=a+' × '+c+' = '+(a*c);speak(a+' times '+c+' is '+(a*c),{force:true})});
+    box.querySelectorAll('.fb').forEach(b=>b.onclick=()=>{b.style.background=b.style.background==='var(--accent)'?'var(--card)':'var(--accent)'});
+  }
+  show(tabs[0][0]);
+}

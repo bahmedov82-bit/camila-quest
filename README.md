@@ -34,3 +34,12 @@ The microphone (Web Speech API) needs the page served over https, which is why i
   solve for x, markup), 4 new Times levels, 3 new Fraction levels, wider Muffin Money, 2 school-vocabulary Word Work levels,
   4 grade 6-7 stories (wholesale, markup and margin, opportunity cost, negotiation), a "Pitch it like a boss" speech level,
   and 3 new typing levels (story lines, school words, capitals and commas).
+
+## v1.9 basics first + Times Tables + Math Toolkit
+
+- Math is earned, never jumped: a level is mastered only with 10+ answers, 8 of the last 10 right without help,
+  4+ answered quickly, on 2 different days. Weekly Check no longer moves math. Level Finder runs only if Dad turns it on.
+  Saves that got the v1.8 math jumps are put back to the levels she earned. Big Leagues stays locked until the basics are mastered.
+- Times Tables quest (new, after Math Quest): ×2, ×10, ×5, ×3, ×4, ×9, ×6, ×8, ×7; on-screen keypad (recall, not choices);
+  3 new facts a day; spaced review; fact memorized after fast right answers on 3 different days; next table at 8 of 10 solid; color map.
+- 🧰 Math Toolkit on every math question: hundred chart, number line, times chart, fraction bars, coins. Using it counts as help.

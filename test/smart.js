@@ -1,10 +1,11 @@
-// Answers math correctly and fast across several "days": levels must climb, reviews must appear, no errors.
+// Answers math correctly and fast across six real (clock-set) days: levels must climb (mastery needs 2 days), no errors.
 const { chromium } = require('playwright');const path=require('path');
 (async()=>{const b=await chromium.launch();const p=await b.newPage();const errors=[];p.on('pageerror',e=>errors.push(e.message));
 await p.goto('file://'+path.resolve(__dirname,'../index.html')+'#debug');
 await p.evaluate(()=>{__cq.D.welcomed=true;__cq.save()});
 const heads=new Set();
 for(let day=0;day<6;day++){
+  await p.clock.setFixedTime(new Date(2026,0,10+day,16,0,0));
   await p.evaluate(d=>{const k='2026-01-'+String(10+d).padStart(2,'0');__cq.D.days={};__cq.D.days[k]={done:[],star:false,items:0,correct:0,secs:0,log:[],breaks:0};Object.values(__cq.D.skills).forEach(s=>{s.review={}});__cq.save();__cq.run('math')},day);
   for(let i=0;i<400;i++){
     const head=await p.$eval('#screen',s=>(s.querySelector('h2,.muted')||{}).textContent||'');heads.add(head.replace(/\d+ of \d+/,'').trim());

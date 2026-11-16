@@ -36,6 +36,7 @@ for(let day=1;day<=7;day++){
     if(await click('#next:not([hidden])'))continue;
     const inp=await page.$('#typed');if(inp){const t=await page.evaluate(()=>{const t=document.getElementById('tgt');const i=document.getElementById('typed');return t?t.textContent:(i.placeholder&&i.placeholder!=='type here'?i.placeholder:null)});
       let want=t;if(!want){await page.waitForTimeout(600);want=await page.evaluate(()=>window.__cq.spoken||'')}await inp.fill(Math.random()<0.9&&want?want:'xyz');await click('#ok');continue}
+    if(await page.$('#kp .opt:not([disabled])')){const a=await page.evaluate(()=>window.__cq.answer);const v=Math.random()<0.85?a:String(+a+1);for(const ch of v)await page.click('#kp .opt[data-k="'+ch+'"]');await page.click('#kp .opt[data-k="✓"]');await page.waitForTimeout(30);continue}
     // math-style question: answer like the learner
     const isQ=await page.$('#opts .opt');
     if(isQ){const info=await page.evaluate(()=>({a:window.__cq.answer,last:window.__cq.last,head:(document.querySelector('#screen .muted')||{}).textContent||''}));
@@ -59,7 +60,7 @@ for(let day=1;day<=7;day++){
   const k=Object.keys(state.days).sort().pop();const d=state.days[k];
   const lv=Object.fromEntries(Object.entries(state.skills).map(([k,v])=>[k,v.level+1]));
   console.log('Day',day,k,'star',d.star,'done',d.done.join(','),'answers',d.items,'right',Math.round(100*d.correct/Math.max(1,d.items))+'%','steps',steps);
-  console.log('   levels',JSON.stringify(lv),'story lv',state.reading.level,'tricky',Object.keys(state.reading.tricky).join(',')||'-');
+  console.log('   tt',state.tt?('cur '+state.tt.cur+' facts '+Object.keys(state.tt.facts).length+' box3+ '+Object.values(state.tt.facts).filter(f=>f.box>=3).length):'-');console.log('   levels',JSON.stringify(lv),'story lv',state.reading.level,'tricky',Object.keys(state.reading.tricky).join(',')||'-');
   console.log('   ',Object.values(d.summaries||{}).map(x=>x.slice(0,110)).join('\n    '));
   await page.close();
 }

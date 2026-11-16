@@ -29,6 +29,7 @@ const NO_SR = `delete window.SpeechRecognition; Object.defineProperty(window,'we
     if (await click('#go:not([hidden])')) continue;
     if (await click('#next:not([hidden])')) continue;
     if (await typeAnswer()) continue;
+    if (await page.$('#kp .opt:not([disabled])')) { const a = await page.evaluate(() => window.__cq.answer); const v = Math.random() < 0.7 ? a : String(+a + 1); for (const ch of v) await click('#kp .opt[data-k="' + ch + '"]'); await click('#kp .opt[data-k="✓"]'); continue; }
     const cells = await page.$$('#tf .cell, #ta .cell, #ones .cell, #f2 .cell, #tc .opt, #parts .opt, #ev .opt');
     if (cells.length) { for (const c of cells) { try { await c.click({ timeout: 1500, force: true }); } catch (e) { errors.push('cellfail: '+e.message.split('\n')[0]); } } await page.waitForTimeout(60); if (await page.$('#back:not([hidden])')) await click('#back:not([hidden])'); continue; }
     if (await click('#say:not([disabled])')) { await page.waitForTimeout(250); continue; }

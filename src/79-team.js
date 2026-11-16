@@ -7,7 +7,7 @@ const DAD_EMAIL='bahmedov82@gmail.com';
 function teamData(){
   const t=today();const acc=t.items?Math.round(100*t.correct/t.items):0;
   const levels={};SKILL_ORDER.forEach(k=>levels[k]=sk(k).level);
-  levels.words=sk('words').level;levels.speech=sk('speech').level;levels.typing=sk('typing').level;levels.story=D.reading.level;
+  levels.words=sk('words').level;levels.speech=sk('speech').level;levels.typing=sk('typing').level;levels.story=D.reading.level;levels.tt_table=ttCurTable();levels.tt_memorized=ttMemorizedCount();
   const C=D.checks||[];const c=C.length?C[C.length-1]:null;const c0=C.length?C[0]:null;
   const chk=c?{date:c.date,math:c.math.pct,words:c.words.pct,wpm:c.read.wpm||null,comp:c.read.comp,first:{date:c0.date,math:c0.math.pct,words:c0.words.pct,wpm:c0.read.wpm||null}}:null;
   let speechPct=null;try{const ib=intelligibilityByWeek();if(ib.length)speechPct=ib[ib.length-1].pct??null}catch(e){}

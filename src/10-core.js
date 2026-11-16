@@ -72,10 +72,14 @@ function resumeMusicHint(){if(D.musicWasOn){D.musicWasOn=false;save();setMusic(t
 // (and at least 6 answered). Mastered levels come back as quick reviews; two review misses re-open the level.
 function sk(key){if(!D.skills[key])D.skills[key]={level:0,hist:{},mastered:[],review:{},reviewMiss:{}};return D.skills[key]}
 // hist entries: 0 = wrong or needed a hint, 1 = right, 2 = right and fast (recall, not counting)
-function record(key,level,ok,fast){const s=sk(key);const h=s.hist[level]=(s.hist[level]||[]);h.push(ok?(fast?2:1):0);if(h.length>12)h.shift();save()}
+function record(key,level,ok,fast){const s=sk(key);const h=s.hist[level]=(s.hist[level]||[]);s.hd=s.hd||{};const hd=s.hd[level]=(s.hd[level]||[]);h.push(ok?(fast?2:1):0);hd.push(todayKey());while(h.length>12)h.shift();while(hd.length>h.length)hd.shift();save()}
 // Mastered when: a clean start (first 3 answers all right = she already knows it, test out), or 4 right in a row,
 // or 5 of the last 6 right. This keeps a fast learner moving instead of grinding levels she already owns.
-function isMastered(key,level){const h=sk(key).hist[level]||[];if(h.length>=3&&h.length<=4&&h.every(x=>x>0))return true;if(h.length>=4&&h.slice(-4).every(x=>x>0))return true;if(h.length<6)return false;return h.slice(-6).filter(x=>x>0).length>=5}
+// MATH (v1.9): basics first. A level is mastered only when she really owns it: at least 10 answers there,
+// 8 of the last 10 right with no hints, 4 or more answered quickly (recall, not counting), on 2 different days.
+function isMasteredMath(key,level){const s=sk(key);const h=s.hist[level]||[];if(h.length<10)return false;const last=h.slice(-10);if(last.filter(x=>x>0).length<8||last.filter(x=>x===2).length<4)return false;
+  const hd=((s.hd||{})[level]||[]).slice(-10);const days=new Set(hd.filter((d,i)=>last[i]>0));return days.size>=2}
+function isMastered(key,level){if(typeof SKILLS!=='undefined'&&SKILLS[key])return isMasteredMath(key,level);const h=sk(key).hist[level]||[];if(h.length>=3&&h.length<=4&&h.every(x=>x>0))return true;if(h.length>=4&&h.slice(-4).every(x=>x>0))return true;if(h.length<6)return false;return h.slice(-6).filter(x=>x>0).length>=5}
 // Too hard: 4+ tries and at most 1 of the last 4 right. Drop one level so she is never stuck failing.
 function isTooHard(key,level){const h=sk(key).hist[level]||[];return h.length>=4&&h.slice(-4).filter(x=>x>0).length<=1}
 function levelAcc(key,level){const h=sk(key).hist[level]||[];if(!h.length)return null;return Math.round(100*h.filter(x=>x>0).length/h.length)}
