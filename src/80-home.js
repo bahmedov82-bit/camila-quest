@@ -109,6 +109,9 @@ function welcome(){
   $('go').onclick=()=>{D.welcomed=true;save();home()};
 }
 $('ver').textContent='v'+VERSION;
+// auto-update: if a newer version is on the site, reload once to get it (the iPad and Home Screen icon cache old copies)
+(async()=>{if(!/^https?:/.test(location.protocol))return;try{const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const v=(await r.text()).trim();
+  if(v&&v!==VERSION&&sessionStorage.getItem('cq-upd')!==v){sessionStorage.setItem('cq-upd',v);location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash)}}catch(e){}})();
 $('musicBtn').onclick=()=>setMusic(!MUSIC);setMusic(MUSIC);
 $('parentLink').onclick=parentGate;
 hud();seedStarterDecks();try{migrateV18()}catch(e){console.warn(e)}try{migrateV19()}catch(e){console.warn(e)}
