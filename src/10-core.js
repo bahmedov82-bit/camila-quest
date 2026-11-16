@@ -60,7 +60,14 @@ function listen(ms){return new Promise(res=>{
 })}
 const norm=t=>String(t||'').toLowerCase().replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();
 const NUMWORDS={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20};
-const soundsLike=(a,b)=>{a=norm(a).replace(/'/g,'');b=norm(b).replace(/'/g,'');if(a===b)return true;if(NUMWORDS[a]!==undefined&&String(NUMWORDS[a])===b)return true;if(NUMWORDS[b]!==undefined&&String(NUMWORDS[b])===a)return true;if(a.length>3&&b.length>3&&(a.startsWith(b)||b.startsWith(a)))return true;const f=s=>s.replace(/[aeiouy]/g,'').replace(/(.)\1+/g,'$1');return a.length>3&&f(a)===f(b)&&f(a).length>=2};
+// Words that sound exactly alike (or that the iPad commonly writes instead): count them as right.
+const HOMO={sun:['son','sunn','sonne'],cat:['kat','cats'],box:['bocks','bachs'],jam:['jamb'],wet:['whet'],net:['nett'],bug:['bugg'],
+ plane:['plain'],whale:['wail','wale','whales'],rain:['reign','rein','raine'],light:['lite'],beach:['beech'],
+ coat:['cote'],night:['knight','nite'],sweet:['suite'],turn:['tern'],hurt:['hert'],bike:['byke'],tree:['trea'],
+ boat:['bote'],toast:['tost'],car:['kar','cars'],bird:['burd'],fork:['forks'],girl:['gurl'],dream:['dreem'],ship:['shipp'],hop:['hopp'],
+ map:['mapp'],stop:['stopp']};
+const sameSound=(a,b)=>(HOMO[a]&&HOMO[a].includes(b))||(HOMO[b]&&HOMO[b].includes(a))||(a.length>=3&&(b===a+'s'||b===a+'es'||a===b+'s'||a===b+'es'));
+const soundsLike=(a,b)=>{a=norm(a).replace(/'/g,'');b=norm(b).replace(/'/g,'');if(a===b)return true;if(sameSound(a,b))return true;if(NUMWORDS[a]!==undefined&&String(NUMWORDS[a])===b)return true;if(NUMWORDS[b]!==undefined&&String(NUMWORDS[b])===a)return true;if(a.length>3&&b.length>3&&(a.startsWith(b)||b.startsWith(a)))return true;const f=s=>s.replace(/[aeiouy]/g,'').replace(/(.)\1+/g,'$1');return a.length>3&&f(a)===f(b)&&f(a).length>=2};
 function wordMatch(target,said,alts){const T=norm(target).split(' ').filter(Boolean);const all=[said].concat(alts||[]).map(x=>norm(x).split(' '));return T.map(w=>({w,ok:all.some(S=>S.some(x=>soundsLike(w,x)))}))}
 function pauseMusicGate(next){
   if(!MUSIC)return next();

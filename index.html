@@ -124,7 +124,7 @@ th{font-family:var(--f-display);color:var(--muted);font-weight:600}
 <script>
 (function(){
 'use strict';
-const VERSION='1.9.2';
+const VERSION='1.9.3';
 // ---------- helpers ----------
 const $=id=>document.getElementById(id);
 const screen=$('screen');
@@ -187,7 +187,14 @@ function listen(ms){return new Promise(res=>{
 })}
 const norm=t=>String(t||'').toLowerCase().replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();
 const NUMWORDS={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20};
-const soundsLike=(a,b)=>{a=norm(a).replace(/'/g,'');b=norm(b).replace(/'/g,'');if(a===b)return true;if(NUMWORDS[a]!==undefined&&String(NUMWORDS[a])===b)return true;if(NUMWORDS[b]!==undefined&&String(NUMWORDS[b])===a)return true;if(a.length>3&&b.length>3&&(a.startsWith(b)||b.startsWith(a)))return true;const f=s=>s.replace(/[aeiouy]/g,'').replace(/(.)\1+/g,'$1');return a.length>3&&f(a)===f(b)&&f(a).length>=2};
+// Words that sound exactly alike (or that the iPad commonly writes instead): count them as right.
+const HOMO={sun:['son','sunn','sonne'],cat:['kat','cats'],box:['bocks','bachs'],jam:['jamb'],wet:['whet'],net:['nett'],bug:['bugg'],
+ plane:['plain'],whale:['wail','wale','whales'],rain:['reign','rein','raine'],light:['lite'],beach:['beech'],
+ coat:['cote'],night:['knight','nite'],sweet:['suite'],turn:['tern'],hurt:['hert'],bike:['byke'],tree:['trea'],
+ boat:['bote'],toast:['tost'],car:['kar','cars'],bird:['burd'],fork:['forks'],girl:['gurl'],dream:['dreem'],ship:['shipp'],hop:['hopp'],
+ map:['mapp'],stop:['stopp']};
+const sameSound=(a,b)=>(HOMO[a]&&HOMO[a].includes(b))||(HOMO[b]&&HOMO[b].includes(a))||(a.length>=3&&(b===a+'s'||b===a+'es'||a===b+'s'||a===b+'es'));
+const soundsLike=(a,b)=>{a=norm(a).replace(/'/g,'');b=norm(b).replace(/'/g,'');if(a===b)return true;if(sameSound(a,b))return true;if(NUMWORDS[a]!==undefined&&String(NUMWORDS[a])===b)return true;if(NUMWORDS[b]!==undefined&&String(NUMWORDS[b])===a)return true;if(a.length>3&&b.length>3&&(a.startsWith(b)||b.startsWith(a)))return true;const f=s=>s.replace(/[aeiouy]/g,'').replace(/(.)\1+/g,'$1');return a.length>3&&f(a)===f(b)&&f(a).length>=2};
 function wordMatch(target,said,alts){const T=norm(target).split(' ').filter(Boolean);const all=[said].concat(alts||[]).map(x=>norm(x).split(' '));return T.map(w=>({w,ok:all.some(S=>S.some(x=>soundsLike(w,x)))}))}
 function pauseMusicGate(next){
   if(!MUSIC)return next();
@@ -578,7 +585,7 @@ function mathTools(key,box){
 }
 // ---------- Word Work: read the word you see, out loud ----------
 const WORDLV=[
- {n:'Short vowels',tip:'Say each sound, then blend them together.',w:[['cat','cat','short a like hat',['cot','cut','cap']],['sun','sun','short u like fun',['sin','son','sum']],['hop','hop','short o like top',['hip','hot','hog']],['bed','bed','short e like red',['bad','bid','bud']],['pig','pig','short i like big',['peg','pin','big']],['map','map','short a',['mop','mat','nap']],['net','net','short e',['nut','not','men']],['lid','lid','short i',['led','lad','lip']],['box','box','short o',['bus','fox','bax']],['bug','bug','short u',['bag','big','hug']],['jam','jam','short a',['jim','gem','ham']],['wet','wet','short e',['wit','wed','vet']]]},
+ {n:'Short vowels',tip:'Say each sound, then blend them together.',w:[['cat','cat','short a like hat',['cot','cut','cap']],['sun','sun','short u like fun',['sin','run','sum']],['hop','hop','short o like top',['hip','hot','hog']],['bed','bed','short e like red',['bad','bid','bud']],['pig','pig','short i like big',['peg','pin','big']],['map','map','short a',['mop','mat','nap']],['net','net','short e',['nut','not','men']],['lid','lid','short i',['led','lad','lip']],['box','box','short o',['bus','fox','bax']],['bug','bug','short u',['bag','big','hug']],['jam','jam','short a',['jim','gem','ham']],['wet','wet','short e',['wit','wed','vet']]]},
  {n:'Blends and digraphs',tip:'sh, ch, th are one sound. Blends like fr and st keep both sounds.',w:[['ship','ship','sh is one sound',['shop','chip','slip']],['frog','frog','fr blend',['from','flag','fog']],['chat','chat','ch like chip',['chop','cat','that']],['spin','spin','sp blend',['span','skin','spit']],['thump','thump','th then ump',['thumb','jump','stump']],['stop','stop','st blend',['step','spot','shop']],['brush','brush','br blend, sh at the end',['brash','blush','bush']],['clock','clock','cl blend, ck at the end',['click','cloak','block']],['think','think','th then ink',['thank','thing','thick']],['whisk','whisk','wh then isk',['whisker','wish','whist']],['glass','glass','gl blend',['grass','class','gloss']],['trash','trash','tr blend, sh at the end',['trish','crash','track']]]},
  {n:'Silent e',tip:'Silent e at the end makes the vowel say its name.',w:[['cake','cake','a says its name',['cook','make','back']],['bike','bike','i says its name',['bake','back','like']],['home','home','o says its name',['hum','hole','hose']],['cube','cube','u says its name',['cub','cute','tube']],['smile','smile','long i, silent e',['small','slime','simile']],['plane','plane','long a',['plan','plain','plant']],['stone','stone','long o',['stun','store','stove']],['shine','shine','long i',['shin','shone','shrine']],['grape','grape','long a',['grip','grasp','gripe']],['whale','whale','long a',['while','wheel','wall']],['flute','flute','long u',['flat','float','fluke']],['brave','brave','long a',['brake','bravo','grave']]]},
  {n:'Vowel teams',tip:'Two vowels walk together: ai, ee, oa, ea, igh.',w:[['boat','boat','oa says long o',['bolt','beat','boot']],['rain','rain','ai says long a',['ran','rein','train']],['light','light','igh says long i',['lit','fight','laugh']],['tree','tree','ee says long e',['try','three','tray']],['beach','beach','ea says long e',['bench','batch','bleach']],['coat','coat','oa says long o',['cot','cat','coast']],['night','night','igh says long i',['knit','nice','neat']],['dream','dream','ea says long e',['drum','drama','cream']],['snail','snail','ai says long a',['snack','sail','snarl']],['sweet','sweet','ee says long e',['sweat','swept','sweep']],['toast','toast','oa says long o',['toss','taste','test']],['bright','bright','igh says long i',['bright','brought','bring'].map((x,i)=>i===0?'brit':x)]]},
