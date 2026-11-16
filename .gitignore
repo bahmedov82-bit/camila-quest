@@ -1,2 +1,3 @@
 node_modules/
 index.txt
+tools/voice/__pycache__/

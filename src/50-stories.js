@@ -58,13 +58,13 @@ const STORIES=[
 ];
 const STORY_MAX=5;
 function pickStory(){const lv=Math.max(0,Math.min(STORY_MAX,D.reading.level));let pool=STORIES.filter(s=>s.lv===lv&&!D.reading.used.includes(s.title));if(!pool.length){D.reading.used=D.reading.used.filter(t=>!STORIES.find(s=>s.title===t&&s.lv===lv));pool=STORIES.filter(s=>s.lv===lv)}return pick(pool)}
-const sentences=t=>t.match(/[^.!?"]+[.!?"]+["']?\s*|[^.!?"]+$/g).map(s=>s.trim()).filter(Boolean).reduce((acc,s)=>{if(acc.length&&(s.length<18||/^["']/.test(s)))acc[acc.length-1]+=' '+s;else acc.push(s);return acc},[]);
+const sentences=t=>t.match(/[^.!?"]+[.!?"]+["']?\s*|[^.!?"]+$/g).map(s=>s.trim()).filter(Boolean).reduce((acc,s)=>{if(acc.length&&(s.length<18||/^["']/.test(s)||/\b(Mr|Mrs|Ms|Dr|St)\.$/.test(acc[acc.length-1])))acc[acc.length-1]+=' '+s;else acc.push(s);return acc},[]);
 
 function storyQuest(done){
   const ST=pickStory();const sents=sentences(ST.text);const res={title:ST.title,lv:ST.lv,date:todayKey(),words:ST.text.split(/\s+/).length,checked:0,missed:[],comp:0,order:false,retell:null,mode:'mic'};
   function intro(){
     render('<div class="stars">📖</div><h2 class="center">'+ST.title+'</h2><div class="box gold"><span class="tag" style="color:var(--coin);font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:.9rem">Today\'s business word</span><p class="prompt small" style="text-align:left"><b>'+ST.concept+'</b></p><p style="font-size:1.2rem">'+ST.meaning+'</p></div><p class="center muted">You will read the story out loud one line at a time. I listen. Then three questions, put it in order, and tell it back.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Start the story</button></div>');
-    speak('Story time! '+ST.title+'. Today\'s business word is '+ST.concept+'. '+ST.meaning+'. Read each line out loud, and I will listen.',{force:true});
+    speak('Story time! '+ST.title+'. Today\'s business word is {'+ST.concept+'}. '+ST.meaning+'. Read each line out loud, and I will listen.',{force:true});
     $('go').onclick=()=>MIC==='no'?silentRead():readLine(0);
   }
   // read aloud, one sentence at a time
@@ -93,7 +93,7 @@ function storyQuest(done){
       if(r.err&&MIC==='no')return nextBtn(()=>fixWords(list.slice(1),cont));
       if(r.err){$('fb').textContent='Say it a little louder.';return}
       if(wordMatch(w,r.text,r.alts).every(x=>x.ok)){$('fb').textContent='That is it! '+w;speak('That is it!');coins(1);return nextBtn(()=>fixWords(list.slice(1),cont))}
-      t++;if(t>=2){$('fb').textContent='Good try. It is "'+w+'". We will practice it in Word Work.';speak('Good try. It is '+w+'. We will practice it another time.',{force:true});return nextBtn(()=>fixWords(list.slice(1),cont))}
+      t++;if(t>=2){$('fb').textContent='Good try. It is "'+w+'". We will practice it in Word Work.';speak('Good try. It is {'+w+'}. We will practice it another time.',{force:true});return nextBtn(()=>fixWords(list.slice(1),cont))}
       $('fb').textContent='I heard "'+r.text+'". Once more: '+w;hear();
     };
   }
@@ -110,7 +110,7 @@ function storyQuest(done){
     function ask(){if(n>=q.length)return afterReading();const w=q[n++];const pool=uniq.filter(x=>x!==w);const dis=shuffle(pool.filter(x=>x[0]===w[0]||Math.abs(x.length-w.length)<=1)).slice(0,3);while(dis.length<3)dis.push(pick(pool));const opts=shuffle([w].concat([...new Set(dis)]).slice(0,4));
       render('<div class="row" style="justify-content:space-between"><span class="muted">🔍 Word check · '+n+' of '+q.length+'</span></div><p class="prompt small">Listen. Tap the word you hear.</p><div class="row" style="justify-content:center"><button class="btn pink" id="hear">🔊 Hear the word</button></div><div class="opts">'+opts.map(o=>'<button class="opt" style="font-size:1.5rem" data-v="'+o+'">'+o+'</button>').join('')+'</div><p class="feedback" id="fb"></p>');
       const say=()=>speak(w,{force:true,rate:.85});$('hear').onclick=say;setTimeout(say,500);let a=false;
-      document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(a)return;a=true;res.checked++;if(b.dataset.v===w){b.classList.add('right');$('fb').textContent=pick(CHEERS);coins(1)}else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'". Say it: '+w;speak('The word was '+w+'. Say it with me. '+w,{force:true,rate:.85});res.missed.push(w);D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save()}nextBtn(ask)})}
+      document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(a)return;a=true;res.checked++;if(b.dataset.v===w){b.classList.add('right');$('fb').textContent=pick(CHEERS);coins(1)}else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'". Say it: '+w;speak('The word was {'+w+'}. Say it with me. {'+w+'}',{force:true,rate:.85});res.missed.push(w);D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save()}nextBtn(ask)})}
     ask();
   }
   function afterReading(){render('<div class="stars">🌟</div><h2 class="center">You read the whole story!</h2><p class="center">'+(res.missed.length?'Words to keep practicing: <b>'+[...new Set(res.missed)].join(', ')+'</b>.':'Not a single word tripped you up.')+'</p><p class="center muted">Now three questions. If you are not sure, look back at the story.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Questions</button></div>');speak('You read the whole story! Now three questions.');$('go').onclick=()=>question(0)}
@@ -125,7 +125,7 @@ function storyQuest(done){
         b.classList.add('wrong');
         if(!second){second=true;const hint=sents.find(s=>norm(s).includes(norm(ans).split(' ').slice(0,2).join(' ')))||sents.find(s=>norm(s).includes(norm(ans).split(' ')[0]))||'';$('fb').textContent='Not yet. Here is the clue from the story.';speak('Not yet. Listen to this part of the story. '+hint+'. Now try again.',{force:true,rate:.95});
           const fb=$('fb');const p=document.createElement('div');p.className='sentence';p.style.fontSize='1.3rem';p.textContent=hint;fb.parentNode.insertBefore(p,fb.nextSibling);return nextBtn(()=>show(),'Try again ➜','pink')}
-        document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===ans)x.classList.add('right')});$('fb').textContent='The answer was: '+ans;speak('The answer was: '+ans,{force:true});nextBtn(()=>question(qi+1));
+        document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===ans)x.classList.add('right')});$('fb').textContent='The answer was: '+ans;speak('The answer was: {'+ans+'}',{force:true});nextBtn(()=>question(qi+1));
       });
     }
     show();
@@ -134,7 +134,7 @@ function storyQuest(done){
     const ev=ST.order;const sh=shuffle(ev);let k=0,mistakes=0;
     render('<div class="row" style="justify-content:space-between"><span class="muted">📖 Put it in order</span></div><p class="prompt small">What happened <b>first</b>? Tap the events in order: first, next, last.</p><div class="opts one" id="ev">'+sh.map(e=>'<button class="opt txt" data-v="'+esc(e)+'">'+e+'</button>').join('')+'</div><p class="feedback" id="fb"></p>');
     speak('What happened first? Tap the events in order.',{force:true});
-    document.querySelectorAll('#ev .opt').forEach(b=>b.onclick=()=>{if(b.dataset.done)return;const want=ev[k];if(b.dataset.v===want){b.dataset.done='1';b.classList.add('right');b.textContent=(k+1)+'. '+want;k++;speak(['First','Next','Last'][Math.min(k-1,2)]+': '+want,{force:true});if(k>=ev.length){res.order=mistakes===0;$('fb').textContent=mistakes?'You got the order!':'Perfect order, first try!';coins(mistakes?1:3);nextBtn(retell)}}else{mistakes++;b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),600);$('fb').textContent='Hmm, that happened later. What came '+['first','next','last'][k]+'?';speak('That happened later. What came '+['first','next','last'][k]+'?',{force:true})}});
+    document.querySelectorAll('#ev .opt').forEach(b=>b.onclick=()=>{if(b.dataset.done)return;const want=ev[k];if(b.dataset.v===want){b.dataset.done='1';b.classList.add('right');b.textContent=(k+1)+'. '+want;k++;speak(['First','Next','Last'][Math.min(k-1,2)]+': {'+want+'}',{force:true});if(k>=ev.length){res.order=mistakes===0;$('fb').textContent=mistakes?'You got the order!':'Perfect order, first try!';coins(mistakes?1:3);nextBtn(retell)}}else{mistakes++;b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),600);$('fb').textContent='Hmm, that happened later. What came '+['first','next','last'][k]+'?';speak('That happened later. What came '+['first','next','last'][k]+'?',{force:true})}});
   }
   function retell(){
     if(MIC==='no')return retellPick();
@@ -147,8 +147,8 @@ function storyQuest(done){
       const said=norm(r.text+' '+(r.alts||[]).join(' '));const hits=ST.keys.filter(k=>said.includes(k));const wc=norm(r.text).split(' ').filter(Boolean).length;res.retell={hits:hits.length,of:ST.keys.length,words:wc,text:r.text};
       $('chips').innerHTML='<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text)+'"</p>'+ST.keys.map(k=>'<span class="chip '+(hits.includes(k)?'ok':'')+'">'+k+'</span>').join('');
       if(hits.length>=4||wc>=25){$('fb').textContent='Great retelling! You remembered '+hits.length+' key parts.';speak('Great retelling! You remembered '+hits.length+' key parts of the story.');coins(5);D.stars+=1;return nextBtn(finish)}
-      if(attempts===0){attempts++;$('fb').textContent='Good start. Can you add more? Think: who, what happened, and the business word '+ST.concept+'.';speak('Good start! Tell me more. Who was in it? What happened? And what does '+ST.concept+' mean?',{force:true});return}
-      $('fb').textContent='Nice try. The key ideas were: '+ST.keys.slice(0,5).join(', ')+'.';speak('Nice try. The key ideas were '+ST.keys.slice(0,5).join(', ')+'.',{force:true});coins(2);nextBtn(finish);
+      if(attempts===0){attempts++;$('fb').textContent='Good start. Can you add more? Think: who, what happened, and the business word '+ST.concept+'.';speak('Good start! Tell me more. Who was in it? What happened? And what does {'+ST.concept+'} mean?',{force:true});return}
+      $('fb').textContent='Nice try. The key ideas were: '+ST.keys.slice(0,5).join(', ')+'.';speak('Nice try. The key ideas were '+ST.keys.slice(0,5).map(x=>'{'+x+'}').join(', ')+'.',{force:true});coins(2);nextBtn(finish);
     };
   }
   function retellPick(){

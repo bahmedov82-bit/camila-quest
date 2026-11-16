@@ -43,3 +43,23 @@ The microphone (Web Speech API) needs the page served over https, which is why i
 - Times Tables quest (new, after Math Quest): ×2, ×10, ×5, ×3, ×4, ×9, ×6, ×8, ×7; on-screen keypad (recall, not choices);
   3 new facts a day; spaced review; fact memorized after fast right answers on 3 different days; next table at 8 of 10 solid; color map.
 - 🧰 Math Toolkit on every math question: hundred chart, number line, times chart, fraction bars, coins. Using it counts as help.
+## Natural voice (v1.9.5)
+
+The Quest no longer uses the iPad's robotic built-in voice. Every line it says is recorded ahead of time with a
+natural neural voice (Kokoro, voice `af_heart`) and stored as small MP3 clips in `voice/v1/` (about 4,000 clips).
+
+- **How it plays** (`src/12-voice.js`): each line is split into sentences; each sentence plays from its clip. Lines that
+  change (numbers, her words, story titles) are stitched from recorded pieces: numbers 0-1000 and the parts marked
+  `{like this}` in `speak()` calls. Only a piece with no recording (for example a study guide added on the iPad) falls
+  back to the device voice. Grown-ups → Settings → Voice can switch to a device voice instead.
+- **iPad audio rule:** sound can only start after a tap, so the first tap of each visit unlocks the player.
+- **Content changed? Re-record:**
+  ```
+  python3 build.py 1.x
+  node tools/voice/harvest.js 8      # finds every line the app can say → tools/voice/lines.json
+  pip install kokoro-onnx soundfile --break-system-packages
+  python3 tools/voice/make.py        # records only new lines, rewrites voice/v1/index.json
+  node test/day.js 2 mixed           # fails if less than 97% of spoken text comes from recordings
+  ```
+- **Tests:** `node test/voice.js` (player rules: interrupt, queue, slow words, fallback, offline, music mode),
+  `node test/day.js [days] [mic|nomic|mixed] [--ipad] [--offline]` (whole days over http with the real clips).

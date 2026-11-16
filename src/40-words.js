@@ -28,7 +28,7 @@ function wordsQuest(done){
       i++;logItem('words',{w,ok,mode,heard,level:lvl(),fromStory});
       if(fromStory){if(ok)D.reading.tricky[w]=Math.max(0,(D.reading.tricky[w]||1)-1)}else{record('words',lvl(),ok,true);if(!ok)stepDownIfStuck('words')}
       if(ok){right++;coins(2)}
-      if(!fromStory&&advanceIfReady('words',WORDLV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">📚⭐</div><h2 class="center">Reading level up!</h2><p class="center">You mastered <b>'+WORDLV[lvl()-1].n+'</b>. Next: <b>'+WORDLV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');speak('Reading level up! You mastered '+WORDLV[lvl()-1].n+'.');coins(5);$('go').onclick=next})}
+      if(!fromStory&&advanceIfReady('words',WORDLV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">📚⭐</div><h2 class="center">Reading level up!</h2><p class="center">You mastered <b>'+WORDLV[lvl()-1].n+'</b>. Next: <b>'+WORDLV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');speak('Reading level up! You mastered {'+WORDLV[lvl()-1].n+'}.');coins(5);$('go').onclick=next})}
       nextBtn(next);
     });
   }
@@ -47,7 +47,7 @@ function readWord(w,syl,tip,dis,meta,cb0){
       if(r.err){$('fb').textContent='I did not catch it. Tap My turn and say it a little louder.';return}
       const ok=wordMatch(w,r.text,r.alts).every(x=>x.ok);profileWords([{w,ok}],'words');
       if(ok){$('fb').textContent=pick(CHEERS)+' I heard "'+r.text+'".';speak(pick(CHEERS));cb(true,'mic',r.text);return}
-      tries++;$('fb').textContent='I heard "'+r.text+'". Not quite. Let\'s break it into parts.';speak('I heard '+r.text+'. Not quite. Let\'s break it into parts.',{force:true});
+      tries++;$('fb').textContent='I heard "'+r.text+'". Not quite. Let\'s break it into parts.';speak(pick(['Not quite.','Almost.','So close.'])+' Let\'s break it into parts.',{force:true});
       $('say').disabled=true;setTimeout(()=>{if(!over&&$('theword'))helpScreen(true)},1600);
     };
   }
@@ -58,7 +58,7 @@ function readWord(w,syl,tip,dis,meta,cb0){
     const sayPart=(idx)=>speak(parts[idx],{force:true,rate:.75});
     partBtns.forEach(b=>b.onclick=()=>{const j=+b.dataset.k;sayPart(j);b.classList.add('right');if(j===k)k++;if(k>=parts.length){$('back').hidden=false;$('fb').textContent='Now put it together: '+w}});
     $('whole').onclick=()=>speak(w,{force:true,rate:.8});
-    speak(parts.length>1?'Tap each part and say it with me.':'Listen: '+w+'. Now tap it and say it.',{force:true});
+    speak(parts.length>1?'Tap each part and say it with me.':'Listen: {'+w+'}. Now tap it and say it.',{force:true});
     $('back').onclick=()=>{if(tries>=2){return cb(false,'mic')}screen1Retry()};
     if(parts.length===1){$('back').hidden=false}
   }
@@ -69,8 +69,8 @@ function readWord(w,syl,tip,dis,meta,cb0){
       if(r.err&&MIC==='no')return noMicFlow();
       if(r.err){$('fb').textContent='I did not catch it. Try once more, nice and loud.';return}
       const ok=wordMatch(w,r.text,r.alts).every(x=>x.ok);
-      if(ok){$('fb').textContent='Yes! That is '+w+'!';speak('Yes! That is '+w+'! You fixed it!');cb(true,'mic',r.text);return}
-      tries++;if(tries>=3){$('fb').textContent='Good effort. The word is '+w+'. We will see it again another day.';speak('Good effort. The word is '+w+'. We will see it again another day.',{force:true,rate:.9});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();cb(false,'mic',r.text);return}
+      if(ok){$('fb').textContent='Yes! That is '+w+'!';speak('Yes! That is {'+w+'}! You fixed it!');cb(true,'mic',r.text);return}
+      tries++;if(tries>=3){$('fb').textContent='Good effort. The word is '+w+'. We will see it again another day.';speak('Good effort. The word is {'+w+'}. We will see it again another day.',{force:true,rate:.9});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();cb(false,'mic',r.text);return}
       $('fb').textContent='I heard "'+r.text+'". Listen once more, then say it.';speak(w,{force:true,rate:.75});
     };
   }
@@ -81,8 +81,8 @@ function readWord(w,syl,tip,dis,meta,cb0){
     const say=()=>speak(w,{force:true,rate:.85});$('hear').onclick=say;setTimeout(say,500);
     let answered=false;
     document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(answered)return;answered=true;const ok=b.dataset.v===w;
-      if(ok){b.classList.add('right');$('fb').textContent='You found it! Now say it out loud 3 times: '+w;speak('You found it! Say it three times. '+w+'. '+w+'. '+w+'.',{force:true,rate:.85});nextBtn(()=>cb(true,'tap'),'I said it! Next')}
-      else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'": '+syl.split('-').join(' · ');speak('The word was '+w+'. '+syl.split('-').join(', ')+'. '+w+'. Say it with me.',{force:true,rate:.8});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();nextBtn(()=>cb(false,'tap'))}});
+      if(ok){b.classList.add('right');$('fb').textContent='You found it! Now say it out loud 3 times: '+w;speak('You found it! Say it three times. {'+w+'}. {'+w+'}. {'+w+'}.',{force:true,rate:.85});nextBtn(()=>cb(true,'tap'),'I said it! Next')}
+      else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'": '+syl.split('-').join(' · ');speak('The word was {'+w+'}. '+syl.split('-').map(x=>'{'+x+'}').join(', ')+'. {'+w+'}. Say it with me.',{force:true,rate:.8});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();nextBtn(()=>cb(false,'tap'))}});
   }
   screen1();
 }

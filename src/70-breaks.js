@@ -66,5 +66,5 @@ function runBreak(kind,after){
   if(kind==='chant'){$('btitle').textContent='🎤 Power Chant';stop=beatStart(96);speak('Power chant! Say it after me, loud and proud!');
     let i=0;const go=()=>{const line=CHANT[i%CHANT.length];i++;show('🎤',line,false);speak(line);timers.push(setTimeout(()=>show('👉','Your turn! Say it!',false),1800))};timers.push(setTimeout(go,2200));timers.push(setInterval(go,5000));}
   const iv=setInterval(()=>{t--;if($('timer'))$('timer').textContent=fmt(t);if(t<=0){clearInterval(iv);stop();timers.forEach(clearTimeout);timers.forEach(clearInterval);if(kind!=='beat')show('🏆','Awesome break! Ready for the next quest?');if($('skip'))$('skip').textContent='Next quest ➜'}},1000);
-  $('skip').onclick=()=>{clearInterval(iv);stop();timers.forEach(clearTimeout);timers.forEach(clearInterval);try{speechSynthesis.cancel()}catch(e){}after()};
+  $('skip').onclick=()=>{clearInterval(iv);stop();timers.forEach(clearTimeout);timers.forEach(clearInterval);hush();after()};
 }

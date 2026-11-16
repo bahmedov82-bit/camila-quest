@@ -124,7 +124,7 @@ th{font-family:var(--f-display);color:var(--muted);font-weight:600}
 <script>
 (function(){
 'use strict';
-const VERSION='1.9.4';
+const VERSION='1.9.5';
 // ---------- helpers ----------
 const $=id=>document.getElementById(id);
 const screen=$('screen');
@@ -158,16 +158,7 @@ function logItem(mod,rec){const t=today();t.items++;if(rec.ok)t.correct++;if(rec
 
 // ---------- voice ----------
 let MUSIC=!!D.music;
-function setMusic(on){MUSIC=on;D.music=on;save();const b=$('musicBtn');if(b){b.textContent='🎵 My music: '+(on?'on':'off');b.setAttribute('aria-pressed',on?'true':'false');b.style.borderColor=on?'var(--accent)':''}if(on){try{speechSynthesis.cancel()}catch(e){}}}
-let VOICE=null;
-// Voice: the most natural English voice the device has. iPad: Enhanced/Premium voices (downloadable in Settings) beat the compact defaults.
-function voiceScore(v){if(!v.lang||!/^en/i.test(v.lang))return -1;let s=0;const n=v.name;if(/premium/i.test(n))s+=50;if(/enhanced/i.test(n))s+=40;if(/natural|neural|online/i.test(n))s+=35;if(/siri/i.test(n))s+=30;['Ava','Zoe','Allison','Samantha','Nicky','Susan','Joelle','Karen','Moira','Tessa','Google US English','Aria','Jenny','Michelle','Emma'].forEach((nm,i)=>{if(n.includes(nm))s+=20-i});if(/en-US/i.test(v.lang))s+=5;if(/compact/i.test(n))s-=20;if(/fred|zarvox|trinoids|whisper|bubbles|bad news|cellos|boing|organ|bells|hysterical|albert|jester|good news|wobble|superstar|grandma|grandpa|rocko|shelley|eddy|flo|reed|sandy|junior|ralph|kathy|bahh|deranged/i.test(n))s-=100;return s}
-function englishVoices(){try{return speechSynthesis.getVoices().filter(v=>voiceScore(v)>=0).sort((a,b)=>voiceScore(b)-voiceScore(a))}catch(e){return []}}
-// a saved choice wins unless a much better (Premium / Enhanced / Natural) voice has been installed since
-const isGoodVoice=v=>/premium|enhanced|natural|neural|online/i.test(v.name)||/google us english/i.test(v.name);
-function pickVoice(){try{const vs=englishVoices();if(!vs.length)return;if(D.voiceName){const v=vs.find(x=>x.name===D.voiceName);if(v&&(isGoodVoice(v)||!isGoodVoice(vs[0]))){VOICE=v;return}}VOICE=vs[0]}catch(e){}}
-try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
-function speak(t,opts){if(window.__cq)window.__cq.spoken=String(t);try{opts=opts||{};if(MUSIC&&!opts.force)return;if(!('speechSynthesis'in window))return;if(!opts.queue)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(String(t).replace(/[*_#]/g,''));u.rate=opts.rate||0.97;u.pitch=opts.pitch||1.0;u.volume=1;if(VOICE)u.voice=VOICE;speechSynthesis.speak(u)}catch(e){}}
+function setMusic(on){MUSIC=on;D.music=on;save();const b=$('musicBtn');if(b){b.textContent='🎵 My music: '+(on?'on':'off');b.setAttribute('aria-pressed',on?'true':'false');b.style.borderColor=on?'var(--accent)':''}if(on){hush()}}
 const CHEERS=['Yes! You got it!','Boom! Nailed it!','That is right, Camila!','Whoa, great thinking!','Look at you go!','You are on fire!','Amazing, Camila!','Yes yes yes!','Super star!','High five!','Your brain is growing!','That is how a boss does it!'];
 const NOTYET=['Not yet, and that is okay. Let\'s look at it together.','So close! Let\'s see how it works.','Good try, Camila. Let me show you.','Tricky one! Let\'s work it out together.','Not yet means you are on your way. Watch this.'];
 
@@ -178,7 +169,7 @@ let MIC=SR?'unknown':'no';let MICFAIL=0;let MICERR='';
 // Now: keep every partial result, stop the mic at the time limit, then wait a moment for the final words.
 function listen(ms){return new Promise(res=>{
   if(!SR){MIC='no';return res({err:'nosr'})}
-  try{speechSynthesis.cancel()}catch(e){}
+  try{hush()}catch(e){}
   let r;try{r=new SR()}catch(e){MIC='no';return res({err:'nosr'})}
   r.lang='en-US';r.interimResults=true;r.maxAlternatives=5;r.continuous=false;
   let done=false,best='',alts=[],quiet=null;
@@ -259,6 +250,65 @@ const BADGES=[
 ];
 function checkBadges(){const fresh=[];BADGES.forEach(b=>{if(!D.badges.includes(b.id)&&b.test()){D.badges.push(b.id);fresh.push(b)}});save();return fresh}
 function badgesHTML(){return '<div class="row" style="justify-content:center;gap:6px">'+BADGES.map(b=>'<div class="badge '+(D.badges.includes(b.id)?'':'off')+'"><span class="em">'+b.em+'</span>'+b.name+'</div>').join('')+'</div>'}
+// ---------- voice: a natural recorded voice (voice/ clips made with a neural voice), device voice only as a fallback ----------
+// Every line is split into sentences; each sentence plays from voice/<VSET>/<hash>.mp3 when that clip exists.
+// A sentence with no clip of its own is tried in pieces (text between numbers + numbers), and only what is still
+// missing is read by the device voice. Grown-ups → Settings → Voice can switch to a device voice instead.
+let VOICE=null;
+const VSET='v1';
+const VBASE='voice/'+VSET+'/';
+function voiceScore(v){if(!v.lang||!/^en/i.test(v.lang))return -1;let s=0;const n=v.name;if(/premium/i.test(n))s+=50;if(/enhanced/i.test(n))s+=40;if(/natural|neural|online/i.test(n))s+=35;if(/siri/i.test(n))s+=30;['Ava','Zoe','Allison','Samantha','Nicky','Susan','Joelle','Karen','Moira','Tessa','Google US English','Aria','Jenny','Michelle','Emma'].forEach((nm,i)=>{if(n.includes(nm))s+=20-i});if(/en-US/i.test(v.lang))s+=5;if(/compact/i.test(n))s-=20;if(/fred|zarvox|trinoids|whisper|bubbles|bad news|cellos|boing|organ|bells|hysterical|albert|jester|good news|wobble|superstar|grandma|grandpa|rocko|shelley|eddy|flo|reed|sandy|junior|ralph|kathy|bahh|deranged/i.test(n))s-=100;return s}
+function englishVoices(){try{return speechSynthesis.getVoices().filter(v=>voiceScore(v)>=0).sort((a,b)=>voiceScore(b)-voiceScore(a))}catch(e){return []}}
+// device voice (fallback): a saved choice wins unless a much better (Premium / Enhanced / Natural) voice has been installed since
+const isGoodVoice=v=>/premium|enhanced|natural|neural|online/i.test(v.name)||/google us english/i.test(v.name);
+function pickVoice(){try{const vs=englishVoices();if(!vs.length)return;if(D.voiceName&&D.voiceName!=='rec'){const v=vs.find(x=>x.name===D.voiceName);if(v&&(isGoodVoice(v)||!isGoodVoice(vs[0]))){VOICE=v;return}}VOICE=vs[0]}catch(e){}}
+try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice}catch(e){}
+const useRec=()=>!D.voiceName||D.voiceName==='rec';
+// text → lookup key (same rules as tools/voice/harvest.js)
+const vkey=t=>String(t).toLowerCase().replace(/[‘’]/g,"'").replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();
+function vhash(str){let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<str.length;i++){const ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);return (4294967296*(2097151&h2)+(h1>>>0)).toString(36)}
+// clean what is shown on screen into what should be heard
+const VORD={2:'half',3:'third',4:'fourth',5:'fifth',6:'sixth',8:'eighth',10:'tenth',12:'twelfth'};
+function vmoney(d,c){d=+d;c=c?+c:0;const D_=d?d+(d===1?' dollar':' dollars'):'';const C_=c?c+(c===1?' cent':' cents'):'';return D_&&C_?D_+' and '+C_:(D_||C_||'0 dollars')}
+function vclean(t){return String(t).replace(/\s*×\s*/g,' times ').replace(/\s*÷\s*/g,' divided by ').replace(/\s*→\s*/g,', then ').replace(/([\w?)])\s*\+\s*(?=[\w?(])/g,'$1 plus ').replace(/([\w?)])\s*[−–]\s*(?=[\w?(])/g,'$1 minus ').replace(/([\w?])\s+-\s+(?=[\w?])/g,'$1 minus ').replace(/(^|[\s(])-(?=\d)/g,'$1negative ').replace(/__+/g,' blank ').replace(/\s*=\s*/g,' equals ').replace(/\$(\d+)(?:\.(\d\d))?/g,(m,d,c)=>vmoney(d,c)).replace(/(\d+)\s*¢/g,(m,c)=>c+(c==='1'?' cent':' cents')).replace(/\b(\d+)\/(\d+)\b/g,(m,a,b)=>VORD[b]?a+' '+(+a===1?VORD[b]:(b==='2'?'halves':VORD[b]+'s')):a+' over '+b).replace(/[*_#]/g,'').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu,'').replace(/__+/g,'blank').replace(/\s+/g,' ').trim()}
+// sentences: split after . ! ? (not inside numbers like 2.5)
+function vsentences(t){const out=[];let cur='';const s=vclean(t);for(let i=0;i<s.length;i++){const c=s[i];cur+=c;if(/[.!?]/.test(c)&&!(c==='.'&&/\d/.test(s[i-1]||'')&&/\d/.test(s[i+1]||''))&&!(c==='.'&&/(^|\s)(Mr|Mrs|Ms|Dr|St|Jr|vs|etc|e\.g|i\.e)$/i.test(cur.slice(0,-1)))){while(i+1<s.length&&/[.!?"')\]]/.test(s[i+1])){cur+=s[++i]}if(vkey(cur))out.push(cur.trim());cur=''}}if(vkey(cur))out.push(cur.trim());return out}
+// pieces of a sentence: text runs and numbers kept apart, so "There are 14." plays as "There are" + "14"
+function vpieces(s){return s.split(/[{}]|(\d+(?:\.\d+)?)/).filter(x=>x!==undefined).map(x=>x.trim()).filter(x=>vkey(x))}
+const unslot=t=>String(t).replace(/[{}]/g,'');
+let VIDX=null;const VREADY=new Promise(res=>{try{if(location.protocol==='file:')return res();fetch(VBASE+'index.json',{cache:'no-cache'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&j.ids)VIDX=new Set(j.ids);res()}).catch(()=>res())}catch(e){res()}setTimeout(res,2500)});
+const hasClip=t=>!!VIDX&&VIDX.has(vhash(vkey(t)));
+const clipUrl=t=>VBASE+vhash(vkey(t))+'.mp3';
+// plan a line: a list of {clip} or {tts} steps
+function vplan(text){const steps=[];const tts=t=>{const last=steps[steps.length-1];if(last&&last.tts!==undefined)last.tts+=' '+t;else steps.push({tts:t})};
+  for(const s of vsentences(text)){if(hasClip(s)){steps.push({clip:clipUrl(s),t:unslot(s)});continue}const ps=vpieces(s);
+    if(ps.length>1&&ps.some(hasClip)){ps.forEach(p=>hasClip(p)?steps.push({clip:clipUrl(p),t:p}):tts(p));continue}tts(s)}
+  steps.forEach(x=>{if(x.tts!==undefined){x.raw=x.tts;x.tts=unslot(x.tts)}});return steps}
+const VSTAT={clipChars:0,ttsChars:0,ttsLines:[]};
+let AUD=null,VGEN=0,VUNLOCKED=false;
+function vaudio(){if(!AUD){AUD=new Audio();AUD.preload='auto';try{AUD.preservesPitch=true;AUD.webkitPreservesPitch=true}catch(e){}}return AUD}
+// iPad: audio may only start after a tap; one silent play on the first tap unlocks the shared player for the whole visit
+function vunlock(){if(VUNLOCKED)return;VUNLOCKED=true;try{const a=vaudio();a.src='data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//OEwAAAAAAAAAAAAEluZm8AAAAPAAAABwAAA2AAVVVVVVVVVVVVVVVVVVVxcXFxcXFxcXFxcXFxcY6Ojo6Ojo6Ojo6Ojo6Oqqqqqqqqqqqqqqqqqqqqx8fHx8fHx8fHx8fHx8fj4+Pj4+Pj4+Pj4+Pj4///////////////////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQEIAAAAAAAAANgmVBi7QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//NExAAAAANIAAAAAExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExFMAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExKYAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExKwAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMu//NExKwAAANIAAAAADEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NExKwAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NExKwAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';const p=a.play();if(p&&p.catch)p.catch(()=>{VUNLOCKED=false})}catch(e){VUNLOCKED=false}}
+['pointerdown','touchend','keydown'].forEach(ev=>document.addEventListener(ev,vunlock,{capture:true,passive:true}));
+function hush(){VGEN++;try{if(AUD){AUD.onended=AUD.onerror=null;AUD.pause()}}catch(e){}try{speechSynthesis.cancel()}catch(e){}}
+function ttsSay(t,rate,pitch,done,raw){try{if(!('speechSynthesis'in window))return done();const u=new SpeechSynthesisUtterance(unslot(t));u.cqRaw=raw||t;u.rate=rate||0.97;u.pitch=pitch||1.0;u.volume=1;if(VOICE)u.voice=VOICE;let fin=false;const f=()=>{if(!fin){fin=true;done()}};u.onend=f;u.onerror=f;setTimeout(f,1500+t.length*120);speechSynthesis.speak(u)}catch(e){done()}}
+let VQ=Promise.resolve();
+function speak(t,opts){if(window.__cq)window.__cq.spoken=unslot(String(t));try{opts=opts||{};if(MUSIC&&!opts.force)return;const text=vclean(t);if(!vkey(text))return;
+  if(!opts.queue){hush();VQ=Promise.resolve()}
+  const gen=VGEN;const rate=opts.rate||0.97;
+  VQ=VQ.then(()=>(VIDX||!useRec())?null:VREADY).then(()=>new Promise(done=>{
+    if(gen!==VGEN)return done();
+    if(!useRec()){VSTAT.ttsChars+=text.length;return ttsSay(text,rate,opts.pitch,done,text)}
+    const steps=vplan(text);steps.forEach(s=>{if(s.clip)VSTAT.clipChars+=s.t.length;else{VSTAT.ttsChars+=s.tts.length;VSTAT.ttsLines.push(s.tts)}});
+    steps.forEach(s=>{if(s.clip)try{fetch(s.clip).catch(()=>{})}catch(e){}});
+    let i=0;const next=()=>{if(gen!==VGEN||i>=steps.length)return done();const s=steps[i++];
+      if(s.tts!==undefined)return ttsSay(s.tts,rate,opts.pitch,next,s.raw);
+      const a=vaudio();let fin=false;const go=()=>{if(!fin){fin=true;clearTimeout(guard);if(gen!==VGEN)return done();a.onended=a.onerror=null;next()}};
+      const fail=e=>{if(fin)return;fin=true;clearTimeout(guard);if(gen!==VGEN)return done();a.onended=a.onerror=null;if(e&&e.name==='AbortError')return next();ttsSay(s.t,rate,opts.pitch,next)};
+      const guard=setTimeout(go,4000+s.t.length*150);
+      const pr=Math.max(.6,Math.min(1.3,rate/0.97));a.onended=go;a.onerror=fail;a.defaultPlaybackRate=pr;a.src=s.clip;a.playbackRate=pr;
+      const p=a.play();if(p&&p.catch)p.catch(fail)};
+    next()}))}catch(e){}}
 // ---------- voice recordings (kept on this device in IndexedDB; grown-ups can listen, rate clarity, download) ----------
 let REC=null,RECSTREAM=null,RECCHUNKS=[],RECT0=0;
 const recMime=()=>{try{for(const m of ['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg']){if(window.MediaRecorder&&MediaRecorder.isTypeSupported(m))return m}}catch(e){}return ''};
@@ -274,7 +324,7 @@ function recordingBooth(label,lines,done){
   render('<div class="stars">🎙️</div><h2 class="center">Recording Booth</h2><p class="center">Read these lines out loud like you are on the radio. Tap <b>Record</b>, read all of them, then tap <b>Stop</b>. You get to hear yourself after!</p><div class="sentence" style="text-align:left">'+lines.map(l=>'<p>'+esc(l)+'</p>').join('')+'</div><div class="row" style="justify-content:center"><button class="btn pink" id="rec" style="font-size:1.4rem">⏺ Record</button><button class="btn good" id="stop" hidden style="font-size:1.4rem">⏹ Stop</button><span class="big" id="clock" style="font-size:1.4rem"></span></div><p class="feedback" id="fb"></p><div id="play" class="row" style="justify-content:center"></div>');
   speak('Recording booth! Tap Record, read the lines like you are on the radio, then tap Stop.',{force:true});
   let iv=null;
-  $('rec').onclick=async()=>{const ok=await recStart();if(!ok){$('fb').textContent='Recording is not available here. Read the lines out loud anyway, then tap Next.';return nextBtn(done)}$('rec').hidden=true;$('stop').hidden=false;$('fb').textContent='Recording… read now';iv=setInterval(()=>{const s=Math.round((performance.now()-RECT0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
+  $('rec').onclick=async()=>{const ok=await recStart();if(!ok){$('fb').textContent='Recording is not available here. Read the lines out loud anyway, then tap Next.';return nextBtn(done)}$('rec').hidden=true;$('stop').hidden=false;$('fb').textContent='Recording… read now';iv=setInterval(()=>{if(!$('clock')){clearInterval(iv);try{if(REC)recStop()}catch(e){}return}const s=Math.round((performance.now()-RECT0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
   $('stop').onclick=async()=>{clearInterval(iv);$('stop').hidden=true;const c=await recStop();if(!c){$('fb').textContent='Hmm, nothing was recorded. That is okay.';return nextBtn(done)}
     const saved=await saveClip({kind:'booth',label,lines,blob:c.blob,secs:c.secs,type:c.type});coins(3);
     const url=URL.createObjectURL(c.blob);$('fb').textContent=saved?'Saved! Want to hear yourself?':'Recorded (could not save on this device). Want to hear yourself?';
@@ -511,7 +561,7 @@ function mathQuest(done){
     if(i%4===3){for(const k of shuffle(SKILL_ORDER)){const l=dueReview(k);if(l!==null){key=k;level=l;review=true;break}}}
     if(!key){key=pickSkill();level=Math.max(0,sk(key).level-(back[key]||0))}
     const item=genItem(key,level);const S_=SKILLS[key];touched.add(key);
-    showItem(item,{head:S_.em+' '+S_.name+' · '+(review?'quick review':S_.levels[level].n)+' · '+(i+1)+' of '+N,bar:Math.round(100*i/N)},(ok,secs,hinted,given)=>{
+    showItem(item,{head:S_.em+' '+S_.name+' · '+(review?'quick review':S_.levels[Math.max(0,Math.min(level,S_.levels.length-1))].n)+' · '+(i+1)+' of '+N,bar:Math.round(100*i/N)},(ok,secs,hinted,given)=>{
       i++;logItem('math',{key,level,ok,secs,hint:hinted,q:item.q.replace(/<[^>]+>/g,''),a:String(item.answer),given,review});
       if(review){reviewResult(key,level,ok)}else{record(key,level,ok&&!hinted,secs<6)}
       if(ok){right++;streak++;wrongRun[key]=0;if(!review&&advanceIfReady(key,S_.levels.length)){return nextBtn(()=>levelUp(key,next),'Next ➜')}return nextBtn(next)}
@@ -527,7 +577,7 @@ function mathQuest(done){
     completeQuest('math','You answered '+right+' of '+N+' right ('+pct+'%). '+(pct>=80?'Two stars!':'One star.')+' Where you are: '+lv,done)}
   next();
 }
-function levelUp(key,cont){const s=sk(key),S_=SKILLS[key];confetti();render('<div class="stars pop">⭐🎉⭐</div><h2 class="center">Level up on '+S_.name+'!</h2><p class="center">You mastered <b>'+S_.levels[s.level-1].n+'</b>. Next up: <b>'+S_.levels[s.level].n+'</b>.</p><p class="center muted">+5 coins</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Let\'s go!</button></div>');coins(5);speak('Level up! You mastered '+S_.levels[s.level-1].n+'. Amazing, Camila!');$('go').onclick=cont}
+function levelUp(key,cont){const s=sk(key),S_=SKILLS[key];confetti();render('<div class="stars pop">⭐🎉⭐</div><h2 class="center">Level up on '+S_.name+'!</h2><p class="center">You mastered <b>'+S_.levels[s.level-1].n+'</b>. Next up: <b>'+S_.levels[s.level].n+'</b>.</p><p class="center muted">+5 coins</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Let\'s go!</button></div>');coins(5);speak('Level up! You mastered {'+S_.levels[s.level-1].n+'}. Amazing, Camila!');$('go').onclick=cont}
 
 // ---------- Brain Sparks: warm-up on things she already knows (builds fast recall) ----------
 function sparksQuest(done){
@@ -564,7 +614,7 @@ function breakSteps(item){const ans=String(item.answer);const q=String(item.q).r
 function breakDown(item,box){const steps=breakSteps(item);let i=0;box.hidden=false;box.className='box';
   function show(){const st=steps[i];box.innerHTML='<div class="row" style="justify-content:space-between"><span class="muted">🧩 Break it down · step '+(i+1)+' of '+steps.length+'</span><button class="speak" id="bdsp">🔊</button></div><p style="font-size:1.25rem"><b>'+st.em+' '+esc(st.t)+'</b></p>'+(st.sub?'<ol style="margin:0;padding-left:22px;font-size:1.15rem">'+st.sub.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+'<div class="row" style="justify-content:center">'+(i<steps.length-1?'<button class="btn sm" id="bdn">Next step ➜</button>':'<button class="btn sm good" id="bdn">Got it, I will try</button>')+'</div>';
     const text=st.t+(st.say?' '+st.say:'')+(st.sub?' '+st.sub.join(' '):'');speak(text.replace(/__/g,'blank'),{force:true,rate:.95});$('bdsp').onclick=()=>speak(text.replace(/__/g,'blank'),{force:true,rate:.95});
-    $('bdn').onclick=()=>{i++;if(i>=steps.length){box.hidden=true;box.innerHTML='';try{speechSynthesis.cancel()}catch(e){}return}show()}}
+    $('bdn').onclick=()=>{i++;if(i>=steps.length){box.hidden=true;box.innerHTML='';hush();return}show()}}
   show()}
 
 // ---------- Math Toolkit: the aids a teacher would put on the desk. Using one counts as help (not mastery). ----------
@@ -622,7 +672,7 @@ function wordsQuest(done){
       i++;logItem('words',{w,ok,mode,heard,level:lvl(),fromStory});
       if(fromStory){if(ok)D.reading.tricky[w]=Math.max(0,(D.reading.tricky[w]||1)-1)}else{record('words',lvl(),ok,true);if(!ok)stepDownIfStuck('words')}
       if(ok){right++;coins(2)}
-      if(!fromStory&&advanceIfReady('words',WORDLV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">📚⭐</div><h2 class="center">Reading level up!</h2><p class="center">You mastered <b>'+WORDLV[lvl()-1].n+'</b>. Next: <b>'+WORDLV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');speak('Reading level up! You mastered '+WORDLV[lvl()-1].n+'.');coins(5);$('go').onclick=next})}
+      if(!fromStory&&advanceIfReady('words',WORDLV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">📚⭐</div><h2 class="center">Reading level up!</h2><p class="center">You mastered <b>'+WORDLV[lvl()-1].n+'</b>. Next: <b>'+WORDLV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');speak('Reading level up! You mastered {'+WORDLV[lvl()-1].n+'}.');coins(5);$('go').onclick=next})}
       nextBtn(next);
     });
   }
@@ -641,7 +691,7 @@ function readWord(w,syl,tip,dis,meta,cb0){
       if(r.err){$('fb').textContent='I did not catch it. Tap My turn and say it a little louder.';return}
       const ok=wordMatch(w,r.text,r.alts).every(x=>x.ok);profileWords([{w,ok}],'words');
       if(ok){$('fb').textContent=pick(CHEERS)+' I heard "'+r.text+'".';speak(pick(CHEERS));cb(true,'mic',r.text);return}
-      tries++;$('fb').textContent='I heard "'+r.text+'". Not quite. Let\'s break it into parts.';speak('I heard '+r.text+'. Not quite. Let\'s break it into parts.',{force:true});
+      tries++;$('fb').textContent='I heard "'+r.text+'". Not quite. Let\'s break it into parts.';speak(pick(['Not quite.','Almost.','So close.'])+' Let\'s break it into parts.',{force:true});
       $('say').disabled=true;setTimeout(()=>{if(!over&&$('theword'))helpScreen(true)},1600);
     };
   }
@@ -652,7 +702,7 @@ function readWord(w,syl,tip,dis,meta,cb0){
     const sayPart=(idx)=>speak(parts[idx],{force:true,rate:.75});
     partBtns.forEach(b=>b.onclick=()=>{const j=+b.dataset.k;sayPart(j);b.classList.add('right');if(j===k)k++;if(k>=parts.length){$('back').hidden=false;$('fb').textContent='Now put it together: '+w}});
     $('whole').onclick=()=>speak(w,{force:true,rate:.8});
-    speak(parts.length>1?'Tap each part and say it with me.':'Listen: '+w+'. Now tap it and say it.',{force:true});
+    speak(parts.length>1?'Tap each part and say it with me.':'Listen: {'+w+'}. Now tap it and say it.',{force:true});
     $('back').onclick=()=>{if(tries>=2){return cb(false,'mic')}screen1Retry()};
     if(parts.length===1){$('back').hidden=false}
   }
@@ -663,8 +713,8 @@ function readWord(w,syl,tip,dis,meta,cb0){
       if(r.err&&MIC==='no')return noMicFlow();
       if(r.err){$('fb').textContent='I did not catch it. Try once more, nice and loud.';return}
       const ok=wordMatch(w,r.text,r.alts).every(x=>x.ok);
-      if(ok){$('fb').textContent='Yes! That is '+w+'!';speak('Yes! That is '+w+'! You fixed it!');cb(true,'mic',r.text);return}
-      tries++;if(tries>=3){$('fb').textContent='Good effort. The word is '+w+'. We will see it again another day.';speak('Good effort. The word is '+w+'. We will see it again another day.',{force:true,rate:.9});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();cb(false,'mic',r.text);return}
+      if(ok){$('fb').textContent='Yes! That is '+w+'!';speak('Yes! That is {'+w+'}! You fixed it!');cb(true,'mic',r.text);return}
+      tries++;if(tries>=3){$('fb').textContent='Good effort. The word is '+w+'. We will see it again another day.';speak('Good effort. The word is {'+w+'}. We will see it again another day.',{force:true,rate:.9});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();cb(false,'mic',r.text);return}
       $('fb').textContent='I heard "'+r.text+'". Listen once more, then say it.';speak(w,{force:true,rate:.75});
     };
   }
@@ -675,8 +725,8 @@ function readWord(w,syl,tip,dis,meta,cb0){
     const say=()=>speak(w,{force:true,rate:.85});$('hear').onclick=say;setTimeout(say,500);
     let answered=false;
     document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(answered)return;answered=true;const ok=b.dataset.v===w;
-      if(ok){b.classList.add('right');$('fb').textContent='You found it! Now say it out loud 3 times: '+w;speak('You found it! Say it three times. '+w+'. '+w+'. '+w+'.',{force:true,rate:.85});nextBtn(()=>cb(true,'tap'),'I said it! Next')}
-      else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'": '+syl.split('-').join(' · ');speak('The word was '+w+'. '+syl.split('-').join(', ')+'. '+w+'. Say it with me.',{force:true,rate:.8});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();nextBtn(()=>cb(false,'tap'))}});
+      if(ok){b.classList.add('right');$('fb').textContent='You found it! Now say it out loud 3 times: '+w;speak('You found it! Say it three times. {'+w+'}. {'+w+'}. {'+w+'}.',{force:true,rate:.85});nextBtn(()=>cb(true,'tap'),'I said it! Next')}
+      else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'": '+syl.split('-').join(' · ');speak('The word was {'+w+'}. '+syl.split('-').map(x=>'{'+x+'}').join(', ')+'. {'+w+'}. Say it with me.',{force:true,rate:.8});D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save();nextBtn(()=>cb(false,'tap'))}});
   }
   screen1();
 }
@@ -766,13 +816,13 @@ const STORIES=[
 ];
 const STORY_MAX=5;
 function pickStory(){const lv=Math.max(0,Math.min(STORY_MAX,D.reading.level));let pool=STORIES.filter(s=>s.lv===lv&&!D.reading.used.includes(s.title));if(!pool.length){D.reading.used=D.reading.used.filter(t=>!STORIES.find(s=>s.title===t&&s.lv===lv));pool=STORIES.filter(s=>s.lv===lv)}return pick(pool)}
-const sentences=t=>t.match(/[^.!?"]+[.!?"]+["']?\s*|[^.!?"]+$/g).map(s=>s.trim()).filter(Boolean).reduce((acc,s)=>{if(acc.length&&(s.length<18||/^["']/.test(s)))acc[acc.length-1]+=' '+s;else acc.push(s);return acc},[]);
+const sentences=t=>t.match(/[^.!?"]+[.!?"]+["']?\s*|[^.!?"]+$/g).map(s=>s.trim()).filter(Boolean).reduce((acc,s)=>{if(acc.length&&(s.length<18||/^["']/.test(s)||/\b(Mr|Mrs|Ms|Dr|St)\.$/.test(acc[acc.length-1])))acc[acc.length-1]+=' '+s;else acc.push(s);return acc},[]);
 
 function storyQuest(done){
   const ST=pickStory();const sents=sentences(ST.text);const res={title:ST.title,lv:ST.lv,date:todayKey(),words:ST.text.split(/\s+/).length,checked:0,missed:[],comp:0,order:false,retell:null,mode:'mic'};
   function intro(){
     render('<div class="stars">📖</div><h2 class="center">'+ST.title+'</h2><div class="box gold"><span class="tag" style="color:var(--coin);font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:.9rem">Today\'s business word</span><p class="prompt small" style="text-align:left"><b>'+ST.concept+'</b></p><p style="font-size:1.2rem">'+ST.meaning+'</p></div><p class="center muted">You will read the story out loud one line at a time. I listen. Then three questions, put it in order, and tell it back.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Start the story</button></div>');
-    speak('Story time! '+ST.title+'. Today\'s business word is '+ST.concept+'. '+ST.meaning+'. Read each line out loud, and I will listen.',{force:true});
+    speak('Story time! '+ST.title+'. Today\'s business word is {'+ST.concept+'}. '+ST.meaning+'. Read each line out loud, and I will listen.',{force:true});
     $('go').onclick=()=>MIC==='no'?silentRead():readLine(0);
   }
   // read aloud, one sentence at a time
@@ -801,7 +851,7 @@ function storyQuest(done){
       if(r.err&&MIC==='no')return nextBtn(()=>fixWords(list.slice(1),cont));
       if(r.err){$('fb').textContent='Say it a little louder.';return}
       if(wordMatch(w,r.text,r.alts).every(x=>x.ok)){$('fb').textContent='That is it! '+w;speak('That is it!');coins(1);return nextBtn(()=>fixWords(list.slice(1),cont))}
-      t++;if(t>=2){$('fb').textContent='Good try. It is "'+w+'". We will practice it in Word Work.';speak('Good try. It is '+w+'. We will practice it another time.',{force:true});return nextBtn(()=>fixWords(list.slice(1),cont))}
+      t++;if(t>=2){$('fb').textContent='Good try. It is "'+w+'". We will practice it in Word Work.';speak('Good try. It is {'+w+'}. We will practice it another time.',{force:true});return nextBtn(()=>fixWords(list.slice(1),cont))}
       $('fb').textContent='I heard "'+r.text+'". Once more: '+w;hear();
     };
   }
@@ -818,7 +868,7 @@ function storyQuest(done){
     function ask(){if(n>=q.length)return afterReading();const w=q[n++];const pool=uniq.filter(x=>x!==w);const dis=shuffle(pool.filter(x=>x[0]===w[0]||Math.abs(x.length-w.length)<=1)).slice(0,3);while(dis.length<3)dis.push(pick(pool));const opts=shuffle([w].concat([...new Set(dis)]).slice(0,4));
       render('<div class="row" style="justify-content:space-between"><span class="muted">🔍 Word check · '+n+' of '+q.length+'</span></div><p class="prompt small">Listen. Tap the word you hear.</p><div class="row" style="justify-content:center"><button class="btn pink" id="hear">🔊 Hear the word</button></div><div class="opts">'+opts.map(o=>'<button class="opt" style="font-size:1.5rem" data-v="'+o+'">'+o+'</button>').join('')+'</div><p class="feedback" id="fb"></p>');
       const say=()=>speak(w,{force:true,rate:.85});$('hear').onclick=say;setTimeout(say,500);let a=false;
-      document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(a)return;a=true;res.checked++;if(b.dataset.v===w){b.classList.add('right');$('fb').textContent=pick(CHEERS);coins(1)}else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'". Say it: '+w;speak('The word was '+w+'. Say it with me. '+w,{force:true,rate:.85});res.missed.push(w);D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save()}nextBtn(ask)})}
+      document.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(a)return;a=true;res.checked++;if(b.dataset.v===w){b.classList.add('right');$('fb').textContent=pick(CHEERS);coins(1)}else{b.classList.add('wrong');document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===w)x.classList.add('right')});$('fb').textContent='The word was "'+w+'". Say it: '+w;speak('The word was {'+w+'}. Say it with me. {'+w+'}',{force:true,rate:.85});res.missed.push(w);D.reading.tricky[w]=(D.reading.tricky[w]||0)+1;save()}nextBtn(ask)})}
     ask();
   }
   function afterReading(){render('<div class="stars">🌟</div><h2 class="center">You read the whole story!</h2><p class="center">'+(res.missed.length?'Words to keep practicing: <b>'+[...new Set(res.missed)].join(', ')+'</b>.':'Not a single word tripped you up.')+'</p><p class="center muted">Now three questions. If you are not sure, look back at the story.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Questions</button></div>');speak('You read the whole story! Now three questions.');$('go').onclick=()=>question(0)}
@@ -833,7 +883,7 @@ function storyQuest(done){
         b.classList.add('wrong');
         if(!second){second=true;const hint=sents.find(s=>norm(s).includes(norm(ans).split(' ').slice(0,2).join(' ')))||sents.find(s=>norm(s).includes(norm(ans).split(' ')[0]))||'';$('fb').textContent='Not yet. Here is the clue from the story.';speak('Not yet. Listen to this part of the story. '+hint+'. Now try again.',{force:true,rate:.95});
           const fb=$('fb');const p=document.createElement('div');p.className='sentence';p.style.fontSize='1.3rem';p.textContent=hint;fb.parentNode.insertBefore(p,fb.nextSibling);return nextBtn(()=>show(),'Try again ➜','pink')}
-        document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===ans)x.classList.add('right')});$('fb').textContent='The answer was: '+ans;speak('The answer was: '+ans,{force:true});nextBtn(()=>question(qi+1));
+        document.querySelectorAll('.opt').forEach(x=>{if(x.dataset.v===ans)x.classList.add('right')});$('fb').textContent='The answer was: '+ans;speak('The answer was: {'+ans+'}',{force:true});nextBtn(()=>question(qi+1));
       });
     }
     show();
@@ -842,7 +892,7 @@ function storyQuest(done){
     const ev=ST.order;const sh=shuffle(ev);let k=0,mistakes=0;
     render('<div class="row" style="justify-content:space-between"><span class="muted">📖 Put it in order</span></div><p class="prompt small">What happened <b>first</b>? Tap the events in order: first, next, last.</p><div class="opts one" id="ev">'+sh.map(e=>'<button class="opt txt" data-v="'+esc(e)+'">'+e+'</button>').join('')+'</div><p class="feedback" id="fb"></p>');
     speak('What happened first? Tap the events in order.',{force:true});
-    document.querySelectorAll('#ev .opt').forEach(b=>b.onclick=()=>{if(b.dataset.done)return;const want=ev[k];if(b.dataset.v===want){b.dataset.done='1';b.classList.add('right');b.textContent=(k+1)+'. '+want;k++;speak(['First','Next','Last'][Math.min(k-1,2)]+': '+want,{force:true});if(k>=ev.length){res.order=mistakes===0;$('fb').textContent=mistakes?'You got the order!':'Perfect order, first try!';coins(mistakes?1:3);nextBtn(retell)}}else{mistakes++;b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),600);$('fb').textContent='Hmm, that happened later. What came '+['first','next','last'][k]+'?';speak('That happened later. What came '+['first','next','last'][k]+'?',{force:true})}});
+    document.querySelectorAll('#ev .opt').forEach(b=>b.onclick=()=>{if(b.dataset.done)return;const want=ev[k];if(b.dataset.v===want){b.dataset.done='1';b.classList.add('right');b.textContent=(k+1)+'. '+want;k++;speak(['First','Next','Last'][Math.min(k-1,2)]+': {'+want+'}',{force:true});if(k>=ev.length){res.order=mistakes===0;$('fb').textContent=mistakes?'You got the order!':'Perfect order, first try!';coins(mistakes?1:3);nextBtn(retell)}}else{mistakes++;b.classList.add('wrong');setTimeout(()=>b.classList.remove('wrong'),600);$('fb').textContent='Hmm, that happened later. What came '+['first','next','last'][k]+'?';speak('That happened later. What came '+['first','next','last'][k]+'?',{force:true})}});
   }
   function retell(){
     if(MIC==='no')return retellPick();
@@ -855,8 +905,8 @@ function storyQuest(done){
       const said=norm(r.text+' '+(r.alts||[]).join(' '));const hits=ST.keys.filter(k=>said.includes(k));const wc=norm(r.text).split(' ').filter(Boolean).length;res.retell={hits:hits.length,of:ST.keys.length,words:wc,text:r.text};
       $('chips').innerHTML='<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text)+'"</p>'+ST.keys.map(k=>'<span class="chip '+(hits.includes(k)?'ok':'')+'">'+k+'</span>').join('');
       if(hits.length>=4||wc>=25){$('fb').textContent='Great retelling! You remembered '+hits.length+' key parts.';speak('Great retelling! You remembered '+hits.length+' key parts of the story.');coins(5);D.stars+=1;return nextBtn(finish)}
-      if(attempts===0){attempts++;$('fb').textContent='Good start. Can you add more? Think: who, what happened, and the business word '+ST.concept+'.';speak('Good start! Tell me more. Who was in it? What happened? And what does '+ST.concept+' mean?',{force:true});return}
-      $('fb').textContent='Nice try. The key ideas were: '+ST.keys.slice(0,5).join(', ')+'.';speak('Nice try. The key ideas were '+ST.keys.slice(0,5).join(', ')+'.',{force:true});coins(2);nextBtn(finish);
+      if(attempts===0){attempts++;$('fb').textContent='Good start. Can you add more? Think: who, what happened, and the business word '+ST.concept+'.';speak('Good start! Tell me more. Who was in it? What happened? And what does {'+ST.concept+'} mean?',{force:true});return}
+      $('fb').textContent='Nice try. The key ideas were: '+ST.keys.slice(0,5).join(', ')+'.';speak('Nice try. The key ideas were '+ST.keys.slice(0,5).map(x=>'{'+x+'}').join(', ')+'.',{force:true});coins(2);nextBtn(finish);
     };
   }
   function retellPick(){
@@ -940,7 +990,7 @@ function speechQuest(done){
       const m=wordMatch(target,r.text,r.alts).filter(x=>x.w.length>1);const score=m.filter(x=>x.ok).length/m.length;if(tries===0)profileWords(m,'echo');
       $('words').innerHTML=m.map(x=>'<span class="chip '+(x.ok?'ok':'bad')+'">'+x.w+'</span>').join('')+'<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text||'…')+'"</p>';
       if(score>=0.9){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));return mark(target,true,'mic',r.text)}
-      if(tries<2){tries++;$('fb').textContent='Almost! Listen to the pink words, then try again.';speak('Almost. Listen. '+target+'. Your turn.',{force:true,rate:.8});return}
+      if(tries<2){tries++;$('fb').textContent='Almost! Listen to the pink words, then try again.';speak('Almost. Listen. {'+target+'}. Your turn.',{force:true,rate:.8});return}
       $('fb').textContent='Good effort. Here it is once more, then we move on.';speak(target,{force:true,rate:.8});mark(target,false,'mic',r.text);
     };
   }
@@ -976,7 +1026,7 @@ function typingQuest(done){
       if(v===want){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));logItem('typing',{t:target,typed:inp.value,ok:true,secs,tries,level:lvl()});record('typing',lvl(),tries===0,true);right++;coins(2);if(secs)times.push({chars:target.length,secs});i++;
         if(advanceIfReady('typing',TYPELV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">⌨️⭐</div><h2 class="center">Typing level up!</h2><p class="center">Next: <b>'+TYPELV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');coins(5);$('go').onclick=next})}
         return nextBtn(next)}
-      if(tries<1){tries++;const diff=want.split('').map((c,k)=>c===(v[k]||'')?c:'<b style="color:var(--accent)">'+(c===' '?'␣':c)+'</b>').join('');$('fb').innerHTML='Not yet. The pink letters need fixing: '+diff;speak('Not yet. Look at the pink letters. '+(hear?'Listen again: '+target:'')+'. Fix it and check again.',{force:true,rate:.9});inp.focus();return}
+      if(tries<1){tries++;const diff=want.split('').map((c,k)=>c===(v[k]||'')?c:'<b style="color:var(--accent)">'+(c===' '?'␣':c)+'</b>').join('');$('fb').innerHTML='Not yet. The pink letters need fixing: '+diff;speak('Not yet. Look at the pink letters. '+(hear?'Listen again: {'+target+'}':'')+'. Fix it and check again.',{force:true,rate:.9});inp.focus();return}
       $('fb').innerHTML='It is spelled <b>'+esc(target)+'</b>. Type it once to lock it in.';speak('It is spelled like this. Type it once to lock it in.',{force:true});inp.value='';inp.placeholder=target;logItem('typing',{t:target,typed:v,ok:false,secs,tries,level:lvl()});record('typing',lvl(),false);stepDownIfStuck('typing');tries=99;i++;
       $('ok').onclick=()=>{if((exact?tidy(inp.value):norm(inp.value))===want){coins(1);next()}else{inp.focus()}}};
     $('ok').onclick=check;inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('ok').click()}};
@@ -1052,7 +1102,7 @@ function runBreak(kind,after){
   if(kind==='chant'){$('btitle').textContent='🎤 Power Chant';stop=beatStart(96);speak('Power chant! Say it after me, loud and proud!');
     let i=0;const go=()=>{const line=CHANT[i%CHANT.length];i++;show('🎤',line,false);speak(line);timers.push(setTimeout(()=>show('👉','Your turn! Say it!',false),1800))};timers.push(setTimeout(go,2200));timers.push(setInterval(go,5000));}
   const iv=setInterval(()=>{t--;if($('timer'))$('timer').textContent=fmt(t);if(t<=0){clearInterval(iv);stop();timers.forEach(clearTimeout);timers.forEach(clearInterval);if(kind!=='beat')show('🏆','Awesome break! Ready for the next quest?');if($('skip'))$('skip').textContent='Next quest ➜'}},1000);
-  $('skip').onclick=()=>{clearInterval(iv);stop();timers.forEach(clearTimeout);timers.forEach(clearInterval);try{speechSynthesis.cancel()}catch(e){}after()};
+  $('skip').onclick=()=>{clearInterval(iv);stop();timers.forEach(clearTimeout);timers.forEach(clearInterval);hush();after()};
 }
 // ---------- Times Tables: memorize the multiplication facts, one table at a time ----------
 // Each fact (like 3×7, same as 7×3) has a box 0-4. Right AND fast (under 5 s, typed on the keypad) moves it up one box;
@@ -1166,12 +1216,12 @@ function checkQuest(done){
       // read aloud in one go: start the clock, read, stop; the mic checks words sentence by sentence afterwards is too slow, so we time the whole read and sample accuracy on 3 sentences
       render('<p class="prompt small">Read this story <b>out loud</b>. Tap Start, read the whole thing, then tap Finished. I will record it so you can hear how clear you sound.</p><div class="row" style="justify-content:center"><button class="btn pink" id="start" style="font-size:1.4rem">▶ Start reading</button></div><div id="story" hidden><div class="passage">'+esc(P.text)+'</div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn good" id="stop" style="font-size:1.4rem">✅ Finished</button><span class="big" id="clock" style="font-size:1.4rem">0:00</span></div></div>');
       speak('Read this story out loud. Tap Start, read the whole thing, then tap Finished.',{force:true});
-      $('start').onclick=async()=>{await recStart();t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
+      $('start').onclick=async()=>{await recStart();t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{if(!$('clock')){clearInterval(iv);try{if(REC)recStop()}catch(e){}return}const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
       $('stop').onclick=async()=>{clearInterval(iv);res.read.secs=Math.round((performance.now()-t0)/1000);res.read.mode='oral';const c=await recStop();if(c){res.read.recorded=true;await saveClip({kind:'check',label:(res.n===1?'Starting Line':'Weekly Check #'+res.n)+' · story read aloud',lines:[P.text],blob:c.blob,secs:c.secs,type:c.type})}sample(0)};
     } else {
       render('<p class="prompt small">Read this story to yourself. Tap Start, read, then tap Finished.</p><div class="row" style="justify-content:center"><button class="btn pink" id="start" style="font-size:1.4rem">▶ Start reading</button></div><div id="story" hidden><div class="passage">'+esc(P.text)+'</div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn good" id="stop" style="font-size:1.4rem">✅ Finished</button><span class="big" id="clock" style="font-size:1.4rem">0:00</span></div></div>');
       speak('Read this story to yourself. Tap Start, read, then tap Finished.',{force:true});
-      $('start').onclick=async()=>{await recStart();t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
+      $('start').onclick=async()=>{await recStart();t0=performance.now();$('start').hidden=true;$('story').hidden=false;iv=setInterval(()=>{if(!$('clock')){clearInterval(iv);try{if(REC)recStop()}catch(e){}return}const s=Math.floor((performance.now()-t0)/1000);$('clock').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0')},250)};
       $('stop').onclick=async()=>{clearInterval(iv);res.read.secs=Math.round((performance.now()-t0)/1000);res.read.mode='silent';res.read.acc=null;const c=await recStop();if(c){res.read.recorded=true;await saveClip({kind:'check',label:(res.n===1?'Starting Line':'Weekly Check #'+res.n)+' · story',lines:[P.text],blob:c.blob,secs:c.secs,type:c.type})}questions(0)};
     }
   }
@@ -1373,7 +1423,7 @@ function battle(d){
       if(ok){c.right++;need[k]=Math.max(0,need[k]-1);streak++;hits++;const dmg=streak>=5?3:streak>=3?2:1;if(dmg>1)need[k]=Math.max(0,need[k]-(dmg-1));if(need[k]===0)c.box=Math.min(3,c.box+1);
         $('fb').textContent=pick(['Hit!','Direct hit!','Boom!','Critical hit!','The boss stumbles!'])+(dmg>1?' x'+dmg+' combo!':'');speak($('fb').textContent);coins(1);save();return nextBtn(next,'Next ➜')}
       c.wrong++;c.box=Math.max(0,c.box-1);streak=0;hearts--;missed.add(k);queue.splice(Math.min(3,queue.length),0,k);need[k]=2;save();
-      $('fb').innerHTML='Ouch! You lost a heart. The answer is: <b>'+esc(c.a)+'</b>';speak('Ouch, you lost a heart. The answer is '+c.a+'. It will come back, so remember it.',{force:true});
+      $('fb').innerHTML='Ouch! You lost a heart. The answer is: <b>'+esc(c.a)+'</b>';speak('Ouch, you lost a heart. The answer is {'+c.a+'}. It will come back, so remember it.',{force:true});
       document.querySelectorAll('.opt').forEach(x=>{if(norm(x.dataset.v)===norm(c.a))x.classList.add('right');else if(norm(x.dataset.v)===norm(given))x.classList.add('wrong')});
       if(hearts<=0)return nextBtn(lose,'The boss escaped…','pink');nextBtn(next,'Keep fighting ➜')};
     if(typed){$('typed').focus();const go=()=>{if(!$('typed').value.trim())return;$('ok').disabled=true;answer($('typed').value)};$('ok').onclick=go;$('typed').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}}}
@@ -1580,8 +1630,8 @@ function activeQuests(){return QUESTS.filter(q=>!q.when||q.when())}
 function home(){
   const t=today();const QS=activeQuests();const nextQ=QS.find(q=>!t.done.includes(q.key));
   const tiles=QS.map(q=>{const done=t.done.includes(q.key);const now=nextQ&&nextQ.key===q.key;return '<button class="quest '+(done?'done':now?'now':'')+'" data-k="'+q.key+'" '+(done?'disabled':'')+'><span class="em">'+q.em+'</span><b>'+q.name+'</b><span class="sub">'+(done?'✅ done today':now?'▶ suggested next':'▶ '+q.sub)+'</span></button>'}).join('');
-  const greet=t.done.length===0?'Hi '+D.name+'! '+QS.length+' quests today. Pick any one to start.':t.done.length<QS.length?'Nice work so far! '+(QS.length-t.done.length)+' to go.':'All done! Today\'s star is yours. ⭐';
-  render('<div class="row" style="justify-content:space-between"><h2>'+D.avatar+' Today\'s Quest</h2><span class="streak">🔥 '+D.streak+' day streak</span></div><p>'+greet+'</p>'+planNoteHTML()+'<div class="quests" id="qs">'+tiles+'</div>'+arenaTile()+(t.star?'<div class="row" style="justify-content:center"><button class="btn ghost" id="bonus">🎁 Bonus round (extra coins)</button><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>':'<div class="row" style="justify-content:center"><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>'));
+  const greet=t.done.length===0?'Hi {'+D.name+'}! '+QS.length+' quests today. Pick any one to start.':t.done.length<QS.length?'Nice work so far! '+(QS.length-t.done.length)+' to go.':'All done! Today\'s star is yours. ⭐';
+  render('<div class="row" style="justify-content:space-between"><h2>'+D.avatar+' Today\'s Quest</h2><span class="streak">🔥 '+D.streak+' day streak</span></div><p>'+esc(greet.replace(/[{}]/g,''))+'</p>'+planNoteHTML()+'<div class="quests" id="qs">'+tiles+'</div>'+arenaTile()+(t.star?'<div class="row" style="justify-content:center"><button class="btn ghost" id="bonus">🎁 Bonus round (extra coins)</button><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>':'<div class="row" style="justify-content:center"><button class="btn ghost sm" id="trophies">🏅 My badges</button></div>'));
   document.querySelectorAll('#qs .quest').forEach(b=>b.onclick=()=>{const q=QUESTS.find(x=>x.key===b.dataset.k);if(q&&!t.done.includes(q.key))q.run(home)});
   if(t.done.length===0&&!D.greeted){D.greeted=todayKey();save();speak(greet)}
   if($('bonus'))$('bonus').onclick=()=>finderDue()?levelFinder(home):mathQuest(home);
@@ -1593,7 +1643,7 @@ function completeQuest(key,summary,done){
   const fresh=checkBadges();const q=QUESTS.find(x=>x.key===key);const allDone=activeQuests().every(x=>t.done.includes(x.key));
   confetti();
   render('<div class="stars pop">'+q.em+'⭐</div><h2 class="center">'+q.name+' complete!</h2><p class="center">'+esc(summary)+'</p>'+(fresh.length?'<div class="box gold"><b>New badge'+(fresh.length>1?'s':'')+'!</b> '+fresh.map(b=>b.em+' '+b.name).join(' · ')+'</div>':'')+'<div class="row" style="justify-content:center">'+(allDone?'<button class="btn good" id="next" style="font-size:1.5rem">🏆 Finish the day</button>':'<button class="btn pink" id="brk">🎶 Take a break</button><button class="btn good" id="next">Next quest ➜</button>')+'</div>');
-  speak(q.name+' complete! '+(fresh.length?'New badge: '+fresh.map(b=>b.name).join(' and ')+'!':''));
+  speak('{'+q.name+'} complete! '+(fresh.length?'New badge: '+fresh.map(b=>'{'+b.name+'}').join(' and ')+'!':''));
   if($('brk'))$('brk').onclick=()=>breakMenu(home);
   $('next').onclick=()=>allDone?dayComplete():home();
 }
@@ -1604,7 +1654,7 @@ function dayComplete(){
   const fresh=checkBadges();confetti();
   const acc=t.items?Math.round(100*t.correct/t.items):0;
   render('<div class="stars pop">🏆⭐🏆</div><h1 class="center">Day complete, '+D.name+'!</h1><p class="center">Every quest done. '+t.items+' questions, '+acc+'% right. 🔥 Streak: '+D.streak+' day'+(D.streak===1?'':'s')+'. Day stars: '+D.dayStars+'.</p>'+(newly.length?'<div class="box gold center"><h2>🎉 PRIZE EARNED!</h2><p class="prompt small">'+newly.map(p=>esc(p.name)).join(' and ')+'</p><p class="muted">Show this screen to Dad.</p></div>':'')+(fresh.length?'<div class="box"><b>New badge'+(fresh.length>1?'s':'')+'!</b> '+fresh.map(b=>b.em+' '+b.name).join(' · ')+'</div>':'')+'<div class="box"><span class="tag" style="color:var(--accent2);font-family:var(--f-display);font-weight:700;text-transform:uppercase;font-size:.9rem">Prizes</span>'+D.prizes.filter(p=>!p.earned).map(p=>'<p>🔒 <b>'+esc(p.name)+'</b> <span class="muted">'+Math.min(p.need,D.dayStars-p.start)+' of '+p.need+' days</span></p><div class="bar"><div style="width:'+Math.round(100*Math.min(p.need,D.dayStars-p.start)/p.need)+'%;background:linear-gradient(90deg,var(--coin),var(--accent))"></div></div>').join('')+D.prizes.filter(p=>p.earned).map(p=>'<p>✅ <b>'+esc(p.name)+'</b> <span class="muted">earned '+p.earned+'</span></p>').join('')+'</div>'+sendDadHTML()+'<div class="row" style="justify-content:center"><button class="btn pink" id="brk">🎶 Dance it out</button><button class="btn" id="home">Back to the map</button></div>');wireSendDad();
-  speak('Day complete, '+D.name+'! '+(newly.length?'Prize earned: '+newly.map(p=>p.name.replace(/[^\w\s]/g,'')).join(' and ')+'!':'Streak: '+D.streak+' days. See you tomorrow!'));
+  speak('Day complete, {'+D.name+'}! '+(newly.length?'Prize earned: '+newly.map(p=>'{'+p.name.replace(/[^\w\s]/g,'').trim()+'}').join(' and ')+'!':'Streak: '+D.streak+' days. See you tomorrow!'));
   $('brk').onclick=()=>breakMenu(home);$('home').onclick=home;
 }
 // save a copy of results where a parent can get them (artifact db when available; always on this device)
@@ -1638,7 +1688,7 @@ function parentPanel(tab){
   const tabs=[['today','Today'],['school','School'],['analytics','Progress'],['speech','Speech'],['recordings','Recordings'],['skills','Skills'],['history','History'],['prizes','Prizes'],['settings','Settings'],['report','Report']];
   let body='';
   if(tab==='today'){const acc=t.items?Math.round(100*t.correct/t.items):0;body='<p><b>'+t.done.length+' of '+activeQuests().length+'</b> quests · '+t.items+' answers · '+acc+'% right · ~'+Math.round(t.secs/60)+' min answering · '+t.breaks+' breaks</p><table><tr><th>Quest</th><th>Result</th></tr>'+QUESTS.map(q=>'<tr><td>'+q.em+' '+q.name+'</td><td>'+esc((t.summaries||{})[q.key]||(t.done.includes(q.key)?'done':'—'))+'</td></tr>').join('')+'</table><h3>Misses today</h3>'+(t.log.filter(l=>!l.ok).length?'<ul style="margin:0;padding-left:20px;font-size:1rem">'+t.log.filter(l=>!l.ok).map(l=>'<li>'+esc(l.m==='math'||l.m==='sparks'?l.q+' → she said '+l.given+' (answer '+l.a+')':l.m==='words'?'word: '+l.w+(l.heard?' (heard "'+l.heard+'")':''):l.m==='speech'?'speech: '+l.t:l.m==='typing'?'typed "'+l.typed+'" for '+l.t:JSON.stringify(l))+'</li>').join('')+'</ul>':'<p class="muted">None yet.</p>')}
-  if(tab==='today'&&!englishVoices().some(isGoodVoice))body='<div class="box gold"><b>🔊 The reading voice sounds robotic?</b> This iPad only has the basic voices. Download a natural one (free, one time): <b>Settings → Accessibility → Spoken Content</b> (on newer iPads: <b>Read &amp; Speak</b>) <b>→ Voices → English → Ava or Zoe → Premium</b>. Wait for the download, close Safari fully, open the Quest again. The app switches to it by itself. On a computer, use Microsoft Edge (its Natural voices are built in).</div>'+body;
+  if(tab==='today'&&(!useRec()||!VIDX)&&!englishVoices().some(isGoodVoice))body='<div class="box gold"><b>🔊 The reading voice sounds robotic?</b> This iPad only has the basic voices. Download a natural one (free, one time): <b>Settings → Accessibility → Spoken Content</b> (on newer iPads: <b>Read &amp; Speak</b>) <b>→ Voices → English → Ava or Zoe → Premium</b>. Wait for the download, close Safari fully, open the Quest again. The app switches to it by itself. On a computer, use Microsoft Edge (its Natural voices are built in).</div>'+body;
   if(tab==='skills'){body='<table><tr><th>Skill</th><th>Where she is</th><th>Set level</th></tr>'+SKILL_ORDER.map(k=>'<tr><td>'+SKILLS[k].em+' '+SKILLS[k].name+'</td><td>'+esc(lvName(k))+(levelAcc(k,sk(k).level)!==null?'<br><span class="muted">'+levelAcc(k,sk(k).level)+'% right at this level · mastered '+sk(k).mastered.length+'</span>':'')+(skillOpen(k)?'':'<br><span class="muted">locked until basics are ready</span>')+'</td><td><select data-k="'+k+'" class="setlv">'+SKILLS[k].levels.map((L,i)=>'<option value="'+i+'" '+(i===sk(k).level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr>').join('')+'<tr><td>🔤 Word Work</td><td>'+WORDLV[Math.min(sk('words').level,WORDLV.length-1)].n+'</td><td><select data-k="words" class="setlv">'+WORDLV.map((L,i)=>'<option value="'+i+'" '+(i===sk('words').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr><tr><td>📖 Stories</td><td>level '+(D.reading.level+1)+' of 5 · '+D.reading.history.filter(h=>h.title).length+' read</td><td><select id="setStory">'+[0,1,2,3,4].map(i=>'<option value="'+i+'" '+(i===D.reading.level?'selected':'')+'>'+(i+1)+' (~grade '+(i+2)+')</option>').join('')+'</select></td></tr><tr><td>🎤 Echo Stage</td><td>'+SPEECHLV[Math.min(sk('speech').level,SPEECHLV.length-1)].n+'</td><td><select data-k="speech" class="setlv">'+SPEECHLV.map((L,i)=>'<option value="'+i+'" '+(i===sk('speech').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr><tr><td>⌨️ Typing</td><td>'+TYPELV[Math.min(sk('typing').level,TYPELV.length-1)].n+'</td><td><select data-k="typing" class="setlv">'+TYPELV.map((L,i)=>'<option value="'+i+'" '+(i===sk('typing').level?'selected':'')+'>'+(i+1)+'. '+L.n+'</option>').join('')+'</select></td></tr></table><p class="muted" style="font-size:.95rem">Levels move up on their own when she gets 5 of the last 6 right. Only change them by hand if a level is clearly wrong for her.</p><h3>Words to practice</h3><p>'+(Object.keys(D.reading.tricky).filter(w=>D.reading.tricky[w]>0).map(w=>'<span class="chip bad">'+w+'</span>').join('')||'<span class="muted">none</span>')+'</p><h3>Recent stories</h3>'+(D.reading.history.filter(h=>h.title).slice(-5).reverse().map(h=>'<p style="font-size:1rem">'+h.date+' · <b>'+esc(h.title)+'</b> · '+h.comp+'/3 questions'+(h.acc!==null&&h.acc!==undefined?' · '+h.acc+'% words':'')+(h.retell&&h.retell.hits!==undefined?' · retell '+h.retell.hits+'/'+h.retell.of+' key ideas':'')+'</p>').join('')||'<p class="muted">none yet</p>')}
   if(tab==='skills')body+='<h3>✖️ Times tables · '+ttMemorizedCount()+' of '+ttTotal()+' memorized · working on ×'+ttCurTable()+'</h3>'+ttMapHTML();
   if(tab==='analytics'){body=analyticsHTML()}
@@ -1647,7 +1697,7 @@ function parentPanel(tab){
   if(tab==='recordings'){body='<p class="muted" style="font-size:.95rem">Every Echo Stage ends in the Recording Booth, and the Weekly Check story is recorded too. Listen, then rate how clear she sounded (1 = hard to understand, 5 = every word clear). Ratings show up on the Progress tab.</p><div id="clips"><p class="muted">Loading…</p></div>'}
   if(tab==='history'){const keys=Object.keys(D.days).sort().reverse().slice(0,21);body='<table><tr><th>Day</th><th>Star</th><th>Quests</th><th>Answers</th><th>Right</th></tr>'+keys.map(k=>{const d=D.days[k];return '<tr><td>'+k+'</td><td>'+(d.star?'⭐':'')+'</td><td>'+d.done.length+'/6</td><td>'+d.items+'</td><td>'+(d.items?Math.round(100*d.correct/d.items)+'%':'')+'</td></tr>'}).join('')+'</table>'+badgesHTML()}
   if(tab==='prizes'){body='<p class="muted" style="font-size:.95rem">A prize is earned by finishing whole days (a day star = all six quests). Each prize counts from the day it was added, so every prize is earned on its own.</p>'+D.prizes.map((p,i)=>'<div class="box"><div class="row" style="justify-content:space-between"><b>'+(p.earned?'✅ ':'🔒 ')+esc(p.name)+'</b><span class="muted">'+(p.earned?'earned '+p.earned:Math.min(p.need,D.dayStars-p.start)+' of '+p.need+' days')+'</span></div><div class="row"><button class="btn ghost sm rmP" data-i="'+i+'">Remove</button>'+(p.earned?'':'<button class="btn ghost sm doneP" data-i="'+i+'">Mark given</button>')+'</div></div>').join('')+'<div class="box gold"><b>Add a prize</b><div class="row"><input type="text" id="pName" class="wide" placeholder="e.g. 🎧 Headphones" style="width:14em"><label>after <input type="number" id="pNeed" min="1" max="120" value="30"> days</label><button class="btn sm" id="addP">Add</button></div><p class="muted" style="font-size:.9rem">Tip: make each new prize a little harder than the last.</p></div>'}
-  if(tab==='settings'){body='<div class="row"><label>Math questions per day <select id="sItems">'+[6,8,10,12].map(n=>'<option '+(n===(D.settings.items||10)?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Break length <select id="sBreak">'+[30,45,60,90].map(n=>'<option value="'+n+'" '+(n===(D.settings.breakSecs||45)?'selected':'')+'>'+n+' sec</option>').join('')+'</select></label></div><div class="row"><label>Her name <input type="text" id="sName" value="'+esc(D.name)+'"></label><label>Avatar <select id="sAv">'+['🦄','🐱','🦊','🐼','🦋','🌟','🐬','🦩'].map(a=>'<option '+(a===D.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label>Grown-up code <input type="text" id="sCode" value="'+esc(D.settings.parentCode||'2013')+'"></label></div><div class="row"><button class="btn sm" id="saveS">Save settings</button></div><hr style="border:0;border-top:1px solid var(--line)"><div class="row"><button class="btn ghost" id="refind">🧭 Level Finder once (can move math up)</button><button class="btn ghost sm" id="resetDay">Reset today\'s quests</button><button class="btn ghost sm" id="exportB">Export everything (copy)</button><button class="btn ghost sm" id="wipe">Start over completely</button></div><p class="muted" style="font-size:.9rem">Progress lives on this iPad in the browser. Export before switching devices, then paste into the Import box on the new one.</p><div class="row"><input type="text" id="importT" class="wide" placeholder="paste export here"><button class="btn ghost sm" id="importB">Import</button></div><div class="box"><b>Voice</b><div class="row"><select id="sVoice" style="width:auto;max-width:100%">'+englishVoices().map(v=>'<option value="'+esc(v.name)+'" '+(VOICE&&VOICE.name===v.name?'selected':'')+'>'+esc(v.name)+' ('+v.lang+')'+(/premium|enhanced|natural|neural|online|siri/i.test(v.name)?' ★':'')+'</option>').join('')+'</select><button class="btn ghost sm" id="hearV">🔊 Hear it</button></div><p class="muted" style="font-size:.9rem">★ = a high-quality voice. On an iPad, download one first: Settings → Accessibility → Spoken Content → Voices → English → pick Ava, Zoe, Samantha or Allison and tap the Enhanced or Premium download. Then come back here, reload, and choose it.</p></div><div class="box"><b>Microphone check</b><div class="row"><button class="btn sm" id="micTest">🎙️ Test the microphone</button><span id="micRes" class="muted" style="font-size:.95rem">'+(MIC==='yes'?'Working on this page.':MIC==='no'?micWhy():'Not tested yet.')+'</span></div><p class="muted" style="font-size:.85rem">Speech recognizer: '+(SR?'yes':'no')+' · secure page: '+(window.isSecureContext?'yes':'no')+' · opened as: '+((navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)?'Home Screen app (speech will not work here, use Safari)':window.top!==window.self?'inside another page (use the GitHub link)':'browser tab (good)')+' · version '+VERSION+'</p></div>'}
+  if(tab==='settings'){body='<div class="row"><label>Math questions per day <select id="sItems">'+[6,8,10,12].map(n=>'<option '+(n===(D.settings.items||10)?'selected':'')+'>'+n+'</option>').join('')+'</select></label><label>Break length <select id="sBreak">'+[30,45,60,90].map(n=>'<option value="'+n+'" '+(n===(D.settings.breakSecs||45)?'selected':'')+'>'+n+' sec</option>').join('')+'</select></label></div><div class="row"><label>Her name <input type="text" id="sName" value="'+esc(D.name)+'"></label><label>Avatar <select id="sAv">'+['🦄','🐱','🦊','🐼','🦋','🌟','🐬','🦩'].map(a=>'<option '+(a===D.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label>Grown-up code <input type="text" id="sCode" value="'+esc(D.settings.parentCode||'2013')+'"></label></div><div class="row"><button class="btn sm" id="saveS">Save settings</button></div><hr style="border:0;border-top:1px solid var(--line)"><div class="row"><button class="btn ghost" id="refind">🧭 Level Finder once (can move math up)</button><button class="btn ghost sm" id="resetDay">Reset today\'s quests</button><button class="btn ghost sm" id="exportB">Export everything (copy)</button><button class="btn ghost sm" id="wipe">Start over completely</button></div><p class="muted" style="font-size:.9rem">Progress lives on this iPad in the browser. Export before switching devices, then paste into the Import box on the new one.</p><div class="row"><input type="text" id="importT" class="wide" placeholder="paste export here"><button class="btn ghost sm" id="importB">Import</button></div><div class="box"><b>Voice</b><div class="row"><select id="sVoice" style="width:auto;max-width:100%"><option value="rec" '+(useRec()?'selected':'')+'>Natural voice (recorded) ★★</option>'+englishVoices().map(v=>'<option value="'+esc(v.name)+'" '+(!useRec()&&VOICE&&VOICE.name===v.name?'selected':'')+'>'+esc(v.name)+' ('+v.lang+')'+(/premium|enhanced|natural|neural|online|siri/i.test(v.name)?' ★':'')+'</option>').join('')+'</select><button class="btn ghost sm" id="hearV">🔊 Hear it</button></div><p class="muted" style="font-size:.9rem">Natural voice (recorded) is the default: a real-sounding voice recorded for every line in the Quest. It needs the internet. The other choices are the iPad voices (★ = higher quality); they are only used if you pick one here, or for a line that has no recording yet (like a study guide you just added).</p>'+(VIDX?'<p class="muted" style="font-size:.85rem">Recorded lines available: '+VIDX.size+'</p>':'<p class="muted" style="font-size:.85rem">Recorded voice not loaded (no internet?). Using the iPad voice for now.</p>')+'</div><div class="box"><b>Microphone check</b><div class="row"><button class="btn sm" id="micTest">🎙️ Test the microphone</button><span id="micRes" class="muted" style="font-size:.95rem">'+(MIC==='yes'?'Working on this page.':MIC==='no'?micWhy():'Not tested yet.')+'</span></div><p class="muted" style="font-size:.85rem">Speech recognizer: '+(SR?'yes':'no')+' · secure page: '+(window.isSecureContext?'yes':'no')+' · opened as: '+((navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)?'Home Screen app (speech will not work here, use Safari)':window.top!==window.self?'inside another page (use the GitHub link)':'browser tab (good)')+' · version '+VERSION+'</p></div>'}
   if(tab==='report'){const txt=reportText();body='<textarea id="rep" style="width:100%;min-height:260px;font:inherit;font-size:.95rem;border-radius:12px;border:2px solid var(--line);padding:10px;background:var(--card);color:var(--fg)">'+esc(txt)+'</textarea><div class="row"><button class="btn sm" id="copyR">Copy</button><a class="btn sm" style="text-decoration:none;display:inline-block" id="mailR" href="'+dadMailHref()+'">✉️ Email to Dad</a></div>'}
   render('<div class="row" style="justify-content:space-between"><h2>Grown-ups</h2><button class="btn ghost sm" id="back">Back to Camila</button></div><div class="row">'+tabs.map(([k,n])=>'<button class="btn sm '+(k===tab?'':'ghost')+' ptab" data-t="'+k+'">'+n+'</button>').join('')+'</div>'+body);
   if(tab==='recordings')renderClips();
@@ -1682,7 +1732,7 @@ $('ver').textContent='v'+VERSION;
 $('musicBtn').onclick=()=>setMusic(!MUSIC);setMusic(MUSIC);
 $('parentLink').onclick=parentGate;
 hud();seedStarterDecks();try{migrateV18()}catch(e){console.warn(e)}try{migrateV19()}catch(e){console.warn(e)}
-if(location.hash==='#debug')window.__cq={D,run:k=>QUESTS.find(q=>q.key===k).run(home),home,parentPanel,save,listClips,recordingBooth,profileWords,speechDrills,parseGuide,addDeck,decks,arenaHome,battle,teamData,dadMailHref};
+if(location.hash==='#debug')window.__cq={D,run:k=>QUESTS.find(q=>q.key===k).run(home),home,parentPanel,save,listClips,recordingBooth,profileWords,speechDrills,parseGuide,addDeck,decks,arenaHome,battle,teamData,dadMailHref,data:{CHEERS,NOTYET,BADGES,WORDLV,STORIES,SOUNDS,SPEECHLV,TYPELV,BREAK_KINDS,CHECK_PROBES,CHECK_WORDS,CHECK_PASSAGE,STARTER_DECKS,SUBJECTS,QUESTS,SKILLS},voice:{VSTAT,vplan,speak,hush,get idx(){return VIDX},get aud(){return AUD}}};
 if(D.welcomed)home();else welcome();
 })();
 </script>

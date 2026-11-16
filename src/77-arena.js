@@ -62,7 +62,7 @@ function battle(d){
       if(ok){c.right++;need[k]=Math.max(0,need[k]-1);streak++;hits++;const dmg=streak>=5?3:streak>=3?2:1;if(dmg>1)need[k]=Math.max(0,need[k]-(dmg-1));if(need[k]===0)c.box=Math.min(3,c.box+1);
         $('fb').textContent=pick(['Hit!','Direct hit!','Boom!','Critical hit!','The boss stumbles!'])+(dmg>1?' x'+dmg+' combo!':'');speak($('fb').textContent);coins(1);save();return nextBtn(next,'Next ➜')}
       c.wrong++;c.box=Math.max(0,c.box-1);streak=0;hearts--;missed.add(k);queue.splice(Math.min(3,queue.length),0,k);need[k]=2;save();
-      $('fb').innerHTML='Ouch! You lost a heart. The answer is: <b>'+esc(c.a)+'</b>';speak('Ouch, you lost a heart. The answer is '+c.a+'. It will come back, so remember it.',{force:true});
+      $('fb').innerHTML='Ouch! You lost a heart. The answer is: <b>'+esc(c.a)+'</b>';speak('Ouch, you lost a heart. The answer is {'+c.a+'}. It will come back, so remember it.',{force:true});
       document.querySelectorAll('.opt').forEach(x=>{if(norm(x.dataset.v)===norm(c.a))x.classList.add('right');else if(norm(x.dataset.v)===norm(given))x.classList.add('wrong')});
       if(hearts<=0)return nextBtn(lose,'The boss escaped…','pink');nextBtn(next,'Keep fighting ➜')};
     if(typed){$('typed').focus();const go=()=>{if(!$('typed').value.trim())return;$('ok').disabled=true;answer($('typed').value)};$('ok').onclick=go;$('typed').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();go()}}}

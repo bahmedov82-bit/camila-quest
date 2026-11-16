@@ -29,7 +29,7 @@ function speechQuest(done){
       const m=wordMatch(target,r.text,r.alts).filter(x=>x.w.length>1);const score=m.filter(x=>x.ok).length/m.length;if(tries===0)profileWords(m,'echo');
       $('words').innerHTML=m.map(x=>'<span class="chip '+(x.ok?'ok':'bad')+'">'+x.w+'</span>').join('')+'<p class="muted" style="font-size:.95rem">I heard: "'+esc(r.text||'…')+'"</p>';
       if(score>=0.9){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));return mark(target,true,'mic',r.text)}
-      if(tries<2){tries++;$('fb').textContent='Almost! Listen to the pink words, then try again.';speak('Almost. Listen. '+target+'. Your turn.',{force:true,rate:.8});return}
+      if(tries<2){tries++;$('fb').textContent='Almost! Listen to the pink words, then try again.';speak('Almost. Listen. {'+target+'}. Your turn.',{force:true,rate:.8});return}
       $('fb').textContent='Good effort. Here it is once more, then we move on.';speak(target,{force:true,rate:.8});mark(target,false,'mic',r.text);
     };
   }
@@ -65,7 +65,7 @@ function typingQuest(done){
       if(v===want){$('fb').textContent=pick(CHEERS);speak(pick(CHEERS));logItem('typing',{t:target,typed:inp.value,ok:true,secs,tries,level:lvl()});record('typing',lvl(),tries===0,true);right++;coins(2);if(secs)times.push({chars:target.length,secs});i++;
         if(advanceIfReady('typing',TYPELV.length)){return nextBtn(()=>{confetti();render('<div class="stars pop">⌨️⭐</div><h2 class="center">Typing level up!</h2><p class="center">Next: <b>'+TYPELV[lvl()].n+'</b>.</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Keep going!</button></div>');coins(5);$('go').onclick=next})}
         return nextBtn(next)}
-      if(tries<1){tries++;const diff=want.split('').map((c,k)=>c===(v[k]||'')?c:'<b style="color:var(--accent)">'+(c===' '?'␣':c)+'</b>').join('');$('fb').innerHTML='Not yet. The pink letters need fixing: '+diff;speak('Not yet. Look at the pink letters. '+(hear?'Listen again: '+target:'')+'. Fix it and check again.',{force:true,rate:.9});inp.focus();return}
+      if(tries<1){tries++;const diff=want.split('').map((c,k)=>c===(v[k]||'')?c:'<b style="color:var(--accent)">'+(c===' '?'␣':c)+'</b>').join('');$('fb').innerHTML='Not yet. The pink letters need fixing: '+diff;speak('Not yet. Look at the pink letters. '+(hear?'Listen again: {'+target+'}':'')+'. Fix it and check again.',{force:true,rate:.9});inp.focus();return}
       $('fb').innerHTML='It is spelled <b>'+esc(target)+'</b>. Type it once to lock it in.';speak('It is spelled like this. Type it once to lock it in.',{force:true});inp.value='';inp.placeholder=target;logItem('typing',{t:target,typed:v,ok:false,secs,tries,level:lvl()});record('typing',lvl(),false);stepDownIfStuck('typing');tries=99;i++;
       $('ok').onclick=()=>{if((exact?tidy(inp.value):norm(inp.value))===want){coins(1);next()}else{inp.focus()}}};
     $('ok').onclick=check;inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();$('ok').click()}};

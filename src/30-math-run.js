@@ -120,7 +120,7 @@ function mathQuest(done){
     if(i%4===3){for(const k of shuffle(SKILL_ORDER)){const l=dueReview(k);if(l!==null){key=k;level=l;review=true;break}}}
     if(!key){key=pickSkill();level=Math.max(0,sk(key).level-(back[key]||0))}
     const item=genItem(key,level);const S_=SKILLS[key];touched.add(key);
-    showItem(item,{head:S_.em+' '+S_.name+' · '+(review?'quick review':S_.levels[level].n)+' · '+(i+1)+' of '+N,bar:Math.round(100*i/N)},(ok,secs,hinted,given)=>{
+    showItem(item,{head:S_.em+' '+S_.name+' · '+(review?'quick review':S_.levels[Math.max(0,Math.min(level,S_.levels.length-1))].n)+' · '+(i+1)+' of '+N,bar:Math.round(100*i/N)},(ok,secs,hinted,given)=>{
       i++;logItem('math',{key,level,ok,secs,hint:hinted,q:item.q.replace(/<[^>]+>/g,''),a:String(item.answer),given,review});
       if(review){reviewResult(key,level,ok)}else{record(key,level,ok&&!hinted,secs<6)}
       if(ok){right++;streak++;wrongRun[key]=0;if(!review&&advanceIfReady(key,S_.levels.length)){return nextBtn(()=>levelUp(key,next),'Next ➜')}return nextBtn(next)}
@@ -136,7 +136,7 @@ function mathQuest(done){
     completeQuest('math','You answered '+right+' of '+N+' right ('+pct+'%). '+(pct>=80?'Two stars!':'One star.')+' Where you are: '+lv,done)}
   next();
 }
-function levelUp(key,cont){const s=sk(key),S_=SKILLS[key];confetti();render('<div class="stars pop">⭐🎉⭐</div><h2 class="center">Level up on '+S_.name+'!</h2><p class="center">You mastered <b>'+S_.levels[s.level-1].n+'</b>. Next up: <b>'+S_.levels[s.level].n+'</b>.</p><p class="center muted">+5 coins</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Let\'s go!</button></div>');coins(5);speak('Level up! You mastered '+S_.levels[s.level-1].n+'. Amazing, Camila!');$('go').onclick=cont}
+function levelUp(key,cont){const s=sk(key),S_=SKILLS[key];confetti();render('<div class="stars pop">⭐🎉⭐</div><h2 class="center">Level up on '+S_.name+'!</h2><p class="center">You mastered <b>'+S_.levels[s.level-1].n+'</b>. Next up: <b>'+S_.levels[s.level].n+'</b>.</p><p class="center muted">+5 coins</p><div class="row" style="justify-content:center"><button class="btn good" id="go">Let\'s go!</button></div>');coins(5);speak('Level up! You mastered {'+S_.levels[s.level-1].n+'}. Amazing, Camila!');$('go').onclick=cont}
 
 // ---------- Brain Sparks: warm-up on things she already knows (builds fast recall) ----------
 function sparksQuest(done){
@@ -173,7 +173,7 @@ function breakSteps(item){const ans=String(item.answer);const q=String(item.q).r
 function breakDown(item,box){const steps=breakSteps(item);let i=0;box.hidden=false;box.className='box';
   function show(){const st=steps[i];box.innerHTML='<div class="row" style="justify-content:space-between"><span class="muted">🧩 Break it down · step '+(i+1)+' of '+steps.length+'</span><button class="speak" id="bdsp">🔊</button></div><p style="font-size:1.25rem"><b>'+st.em+' '+esc(st.t)+'</b></p>'+(st.sub?'<ol style="margin:0;padding-left:22px;font-size:1.15rem">'+st.sub.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+'<div class="row" style="justify-content:center">'+(i<steps.length-1?'<button class="btn sm" id="bdn">Next step ➜</button>':'<button class="btn sm good" id="bdn">Got it, I will try</button>')+'</div>';
     const text=st.t+(st.say?' '+st.say:'')+(st.sub?' '+st.sub.join(' '):'');speak(text.replace(/__/g,'blank'),{force:true,rate:.95});$('bdsp').onclick=()=>speak(text.replace(/__/g,'blank'),{force:true,rate:.95});
-    $('bdn').onclick=()=>{i++;if(i>=steps.length){box.hidden=true;box.innerHTML='';try{speechSynthesis.cancel()}catch(e){}return}show()}}
+    $('bdn').onclick=()=>{i++;if(i>=steps.length){box.hidden=true;box.innerHTML='';hush();return}show()}}
   show()}
 
 // ---------- Math Toolkit: the aids a teacher would put on the desk. Using one counts as help (not mastery). ----------

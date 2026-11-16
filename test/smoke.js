@@ -17,7 +17,7 @@ const NO_SR = `delete window.SpeechRecognition; Object.defineProperty(window,'we
   await page.goto('file://' + path.resolve(__dirname, '../index.html') + '#debug');
   await page.waitForTimeout(300);
   const seen = new Set(); const trail = []; let stalls = 0, steps = 0; let lastHtml = '';
-  const click = async (sel) => { const el = await page.$(sel); if (!el) return false; try { await el.click({ timeout: 2500 }); return true; } catch (e) { errors.push('clickfail ' + sel + ': ' + e.message.split('\n')[0]); return false; } };
+  const click = async (sel) => { const el = await page.$(sel + ':visible'); if (!el) return false; try { await el.click({ timeout: 2500 }); return true; } catch (e) { if (!/not attached|detached/.test(e.message)) errors.push('clickfail ' + sel + ': ' + e.message.split('\n')[0]); return false; } };
   const typeAnswer = async () => { const inp = await page.$('#typed'); if (!inp) return false; const tgt = await page.evaluate(() => { const t = document.getElementById('tgt'); const i = document.getElementById('typed'); return t ? t.textContent : (i.placeholder !== 'type here' ? i.placeholder : 'cat'); }); await inp.fill(Math.random() < 0.7 ? tgt : 'xyz'); await click('#ok'); return true; };
   for (steps = 0; steps < 2500; steps++) {
     const head = await page.$eval('#screen', s => (s.querySelector('h1,h2,.muted')||{}).textContent || '');
