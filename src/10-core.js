@@ -47,27 +47,36 @@ const NOTYET=['Not yet, and that is okay. Let\'s look at it together.','So close
 // ---------- microphone ----------
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;
 let MIC=SR?'unknown':'no';let MICFAIL=0;let MICERR='';
+// iPad Safari often holds the words until the mic is stopped, and the old version gave up first ("did not catch it").
+// Now: keep every partial result, stop the mic at the time limit, then wait a moment for the final words.
 function listen(ms){return new Promise(res=>{
   if(!SR){MIC='no';return res({err:'nosr'})}
+  try{speechSynthesis.cancel()}catch(e){}
   let r;try{r=new SR()}catch(e){MIC='no';return res({err:'nosr'})}
-  r.lang='en-US';r.interimResults=false;r.maxAlternatives=5;r.continuous=false;
-  let done=false;const finish=v=>{if(done)return;done=true;try{r.stop()}catch(e){}res(v)};
-  r.onresult=e=>{MIC='yes';const alts=[];for(const a of e.results[0])alts.push(a.transcript);finish({text:alts[0]||'',alts})};
-  r.onerror=e=>{MICERR=e.error||'';if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture')MIC='no';if(e.error==='network'){MICFAIL++;if(MICFAIL>=3&&MIC!=='yes')MIC='no'}finish({err:e.error})};
-  r.onend=()=>finish({err:'silence'});
+  r.lang='en-US';r.interimResults=true;r.maxAlternatives=5;r.continuous=false;
+  let done=false,best='',alts=[],quiet=null;
+  const finish=v=>{if(done)return;done=true;clearTimeout(quiet);try{r.abort()}catch(e){}res(v)};
+  const withText=()=>best.trim()?{text:best.trim(),alts:alts.length?alts:[best.trim()]}:null;
+  r.onresult=e=>{MIC='yes';let txt='',fin=false,al=[];for(let i=0;i<e.results.length;i++){const R=e.results[i];txt+=(R[0]&&R[0].transcript||'')+' ';if(R.isFinal)fin=true}
+    const last=e.results[e.results.length-1];if(last)for(const a of last)al.push(a.transcript);best=txt.trim();alts=al.length>1?[best].concat(al):[best];
+    if(fin)return finish(withText());
+    clearTimeout(quiet);quiet=setTimeout(()=>finish(withText()||{err:'silence'}),1600)};
+  r.onerror=e=>{MICERR=e.error||'';if(e.error==='not-allowed'||e.error==='service-not-allowed'||e.error==='audio-capture')MIC='no';if(e.error==='network'){MICFAIL++;if(MICFAIL>=3&&MIC!=='yes')MIC='no'}if(withText())return finish(withText());if(e.error==='aborted')return;finish({err:e.error})};
+  r.onend=()=>finish(withText()||{err:'silence'});
   try{r.start()}catch(e){MIC='no';finish({err:'start'})}
-  setTimeout(()=>finish({err:'timeout'}),ms||6000);
+  setTimeout(()=>{if(done)return;try{r.stop()}catch(e){}setTimeout(()=>finish(withText()||{err:'timeout'}),1500)},ms||6000);
 })}
 const norm=t=>String(t||'').toLowerCase().replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();
 const NUMWORDS={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20};
 // Words that sound exactly alike (or that the iPad commonly writes instead): count them as right.
-const HOMO={sun:['son','sunn','sonne'],cat:['kat','cats'],box:['bocks','bachs'],jam:['jamb'],wet:['whet'],net:['nett'],bug:['bugg'],
+const HOMO={world:['whirled','word','worlds','wurld'],sun:['son','sunn','sonne'],cat:['kat','cats'],box:['bocks','bachs'],jam:['jamb'],wet:['whet'],net:['nett'],bug:['bugg'],
  plane:['plain'],whale:['wail','wale','whales'],rain:['reign','rein','raine'],light:['lite'],beach:['beech'],
  coat:['cote'],night:['knight','nite'],sweet:['suite'],turn:['tern'],hurt:['hert'],bike:['byke'],tree:['trea'],
  boat:['bote'],toast:['tost'],car:['kar','cars'],bird:['burd'],fork:['forks'],girl:['gurl'],dream:['dreem'],ship:['shipp'],hop:['hopp'],
  map:['mapp'],stop:['stopp']};
 const sameSound=(a,b)=>(HOMO[a]&&HOMO[a].includes(b))||(HOMO[b]&&HOMO[b].includes(a))||(a.length>=3&&(b===a+'s'||b===a+'es'||a===b+'s'||a===b+'es'));
-const soundsLike=(a,b)=>{a=norm(a).replace(/'/g,'');b=norm(b).replace(/'/g,'');if(a===b)return true;if(sameSound(a,b))return true;if(NUMWORDS[a]!==undefined&&String(NUMWORDS[a])===b)return true;if(NUMWORDS[b]!==undefined&&String(NUMWORDS[b])===a)return true;if(a.length>3&&b.length>3&&(a.startsWith(b)||b.startsWith(a)))return true;const f=s=>s.replace(/[aeiouy]/g,'').replace(/(.)\1+/g,'$1');return a.length>3&&f(a)===f(b)&&f(a).length>=2};
+function lev1(a,b){if(Math.abs(a.length-b.length)>1)return false;let i=0,j=0,d=0;while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue}if(++d>1)return false;if(a.length>b.length)i++;else if(b.length>a.length)j++;else{i++;j++}}return d+(a.length-i)+(b.length-j)<=1}
+const soundsLike=(a,b)=>{a=norm(a).replace(/'/g,'');b=norm(b).replace(/'/g,'');if(a===b)return true;if(sameSound(a,b))return true;if(a.length>=4&&b.length>=4&&a[0]===b[0]&&lev1(a,b))return true;if(NUMWORDS[a]!==undefined&&String(NUMWORDS[a])===b)return true;if(NUMWORDS[b]!==undefined&&String(NUMWORDS[b])===a)return true;if(a.length>3&&b.length>3&&(a.startsWith(b)||b.startsWith(a)))return true;const f=s=>s.replace(/[aeiouy]/g,'').replace(/(.)\1+/g,'$1');return a.length>3&&f(a)===f(b)&&f(a).length>=2};
 function wordMatch(target,said,alts){const T=norm(target).split(' ').filter(Boolean);const all=[said].concat(alts||[]).map(x=>norm(x).split(' '));return T.map(w=>({w,ok:all.some(S=>S.some(x=>soundsLike(w,x)))}))}
 function pauseMusicGate(next){
   if(!MUSIC)return next();
